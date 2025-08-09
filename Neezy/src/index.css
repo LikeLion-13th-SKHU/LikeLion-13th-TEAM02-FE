@@ -1,0 +1,46 @@
+html,
+body {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  justify-content: center; /* 박스를 화면 중앙 가로정렬 */
+  align-items: center; /* 박스를 화면 중앙 세로정렬 */
+}
+
+#root {
+  width: 375px;
+  height: 800px;
+  display: flex;
+  flex-direction: column; /* 세로 배치 */
+  justify-content: space-between; /* 상단과 하단에 배치 */
+  overflow: hidden;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+  background-color: white;
+}
+
+/* 네브바 스타일 (fixed 제거!) */
+nav.nav-container {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 60px;
+  background-color: #fff;
+  box-shadow: 0 -1px 5px rgba(0, 0, 0, 0.1);
+}
+
+nav.nav-container img {
+  height: 40px;
+  cursor: pointer;
+  user-select: none;
+}
+
+/* 반응형 예시 */
+@media (max-width: 400px) {
+  #root {
+    width: 320px;
+    height: 568px;
+  }
+  nav.nav-container {
+    height: 50px;
+  }
+}
