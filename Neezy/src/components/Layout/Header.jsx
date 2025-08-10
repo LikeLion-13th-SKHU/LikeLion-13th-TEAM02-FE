@@ -26,7 +26,7 @@ const Title = styled.h1`
 export default function Header() {
   return (
     <HeaderContainer>
-      <Logo src="/img/Neezy 로고.png" alt="Neezy Logo" />
+      <Logo src="/img/Neezy_로고.png" alt="Neezy Logo" />
     </HeaderContainer>
   );
 }
