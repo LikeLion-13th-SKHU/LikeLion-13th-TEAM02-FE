@@ -10,7 +10,7 @@ export default function Nav() {
       default: "/img/네브바_메인.png",
       active: "/img/네브바_메인선택.png",
       alt: "메인",
-      path: "/",
+      path: "/main",
     },
     {
       default: "/img/네브바_챗봇.png",
