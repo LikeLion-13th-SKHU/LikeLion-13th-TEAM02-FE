@@ -8,6 +8,7 @@ import ChatBot from "./components/Pages/ChatBot";
 import MyPage from "./components/Pages/MyPage";
 import Login from "./components/Pages/Login";
 import KakaoCallback from "./components/Pages/KakaoCallback";
+import RoleSelect from "./components/Pages/RoleSelect";
 
 export default function App() {
   useEffect(() => {
@@ -27,6 +28,7 @@ export default function App() {
         <Route path="/auth/kakao/callback" element={<KakaoCallback />} />
         <Route path="/auth/kakao/callback" element={<KakaoCallback />} />
         <Route path="/auth/kakao/callback" element={<KakaoCallback />} />
+        <Route path="/roleselect" element={<RoleSelect />} />
       </Routes>
     </Router>
   );
