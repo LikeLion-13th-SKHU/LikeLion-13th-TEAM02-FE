@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState} from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 export default function KakaoCallback() {
@@ -13,8 +13,8 @@ export default function KakaoCallback() {
             return;
         }
 
-        const REST_API_KEY = "5de85e47fb0dab85bca11aa59571w396";
-        const REDIRECT_URI = "http://localhost:5173/auth/kako/callback";
+        const REST_API_KEY = process.env.REACT_APP_KAKAO_REST_KEY;
+        const REDIRECT_URI = process.env.REACT_APP_KAKAO_REDIRECT_URI;
 
         const getToken = async () => {
             try {

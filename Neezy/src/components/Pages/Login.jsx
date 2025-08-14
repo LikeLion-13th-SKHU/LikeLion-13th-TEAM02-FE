@@ -33,11 +33,11 @@ const googleBtnStyle = {
 
 const Login = () => {
     const handleKakaoLogin = () => {
-        const REST_API_KEY = "5DE85E47FB0DAB85BCA11AA59571E396";
-        const REDIRECT_URI = "http://localhost:5173/auth/kakao/callback";
+        const REST_API_KEY = process.env.REACT_APP_KAKAO_REST_KEY;
+        const REDIRECT_URI = process.env.REACT_APP_KAKAO_REDIRECT_URI;
         const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}`;
         
-        console.log("카카오 로그인 버트 클릭됨");
+        console.log("카카오 로그인 버튼 클릭됨");
 
         window.location.href = kakaoAuthUrl;
     };
