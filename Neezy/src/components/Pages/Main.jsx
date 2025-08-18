@@ -220,7 +220,7 @@ export default function Main() {
 
     // 3-2. GeoJSON 데이터에서 동의 좌표 추출
     async function findNeighborhoodCoordinates(neighborhoodName) {
-      const response = await fetch("/2503_행정구역[동].json");
+      const response = await fetch("/222.json");
       const data = await response.json();
 
       // 데이터 구조 확인
