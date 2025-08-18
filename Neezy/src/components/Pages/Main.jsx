@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import styled, { keyframes } from "styled-components";
+import proj4 from "proj4";
 import Header from "../Layout/Header";
 import Nav from "../Layout/Nav";
 import { useNavigate } from "react-router-dom";
@@ -134,8 +135,7 @@ const CloseButton = styled.button`
   font-size: 20px;
   cursor: pointer;
 `;
-
-// BottomSheet 컴포넌트 함수형
+/** BottomSheet 컴포넌트 (기존 그대로) **/
 function BottomSheet({ onClose, children }) {
   return (
     <Overlay onClick={onClose}>
@@ -147,17 +147,50 @@ function BottomSheet({ onClose, children }) {
   );
 }
 
+/** Main 페이지 **/
 export default function Main() {
   const mapRef = useRef(null);
   const placesRef = useRef(null);
   const [map, setMap] = useState(null);
   const [keyword, setKeyword] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+  const [polygonLoaded, setPolygonLoaded] = useState(false); // 폴리곤 중복 방지
   const navigate = useNavigate();
+
+  // 1. 내 위치 받아오기
   useEffect(() => {
-    if (window.kakao && window.kakao.maps && mapRef.current && !map) {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLatitude(position.coords.latitude);
+          setLongitude(position.coords.longitude);
+        },
+        () => {
+          // 실패 시 서울 시청 기본 좌표 사용
+          setLatitude(37.5665);
+          setLongitude(126.978);
+        }
+      );
+    } else {
+      setLatitude(37.5665);
+      setLongitude(126.978);
+    }
+  }, []);
+
+  // 2. 카카오맵 생성 (최초 1회)
+  useEffect(() => {
+    if (
+      window.kakao &&
+      window.kakao.maps &&
+      mapRef.current &&
+      latitude &&
+      longitude &&
+      !map
+    ) {
       const createdMap = new window.kakao.maps.Map(mapRef.current, {
-        center: new window.kakao.maps.LatLng(37.5665, 126.978),
+        center: new window.kakao.maps.LatLng(latitude, longitude),
         level: 4,
       });
       createdMap.setDraggable(true);
@@ -165,9 +198,89 @@ export default function Main() {
       setMap(createdMap);
       placesRef.current = new window.kakao.maps.services.Places();
     }
-  }, [map]);
+  }, [latitude, longitude, map]);
 
-  // 장소 검색
+  // 3. 내 동(행정구역) 폴리곤 표시
+  useEffect(() => {
+    if (!map || !latitude || !longitude || polygonLoaded) return;
+
+    // 3-1. 동이름 찾기 (coord2RegionCode)
+    function findNeighborhood() {
+      return new Promise((resolve, reject) => {
+        const geocoder = new window.kakao.maps.services.Geocoder();
+        geocoder.coord2RegionCode(longitude, latitude, (result, status) => {
+          if (status === window.kakao.maps.services.Status.OK) {
+            resolve(result[0].region_3depth_name);
+          } else {
+            reject(status);
+          }
+        });
+      });
+    }
+
+    // 3-2. GeoJSON 데이터에서 동의 좌표 추출
+    async function findNeighborhoodCoordinates(neighborhoodName) {
+      const response = await fetch("/2503_행정구역[동].json");
+      const data = await response.json();
+
+      // 데이터 구조 확인
+      console.log("받은 GeoJSON 데이터(features):", data.features);
+      // 찾으려는 동 이름 확인
+      console.log("찾는 동 이름:", neighborhoodName);
+
+      for (const feature of data.features) {
+        // 모든 동 이름을 출력해보기(매칭 가능한지 체크)
+        console.log(
+          "feature.properties.EMD_KOR_NM:",
+          feature.properties.EMD_KOR_NM
+        );
+        if (neighborhoodName === feature.properties.EMD_KOR_NM) {
+          console.log("===> 찾았다! 좌표:", feature.geometry.coordinates);
+          return feature.geometry.coordinates;
+        }
+      }
+      // 못 찾았을 때
+      console.log("해당 동을 찾지 못함");
+      return null;
+    }
+
+    // 3-3. 폴리곤 지도에 표시
+    async function addNeighborhoodPolygon() {
+      try {
+        const neighborhoodName = await findNeighborhood();
+        const coordinates = await findNeighborhoodCoordinates(neighborhoodName);
+        if (!coordinates) return;
+
+        const polygonPath = [];
+        const utmk =
+          "+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs";
+        const wgs84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
+        const transformer = proj4(utmk, wgs84);
+
+        coordinates.forEach((coordinateArray) => {
+          coordinateArray.forEach((coordinate) => {
+            const [longi, lati] = transformer.forward(coordinate);
+            polygonPath.push(new window.kakao.maps.LatLng(lati, longi));
+          });
+        });
+
+        new window.kakao.maps.Polygon({
+          path: polygonPath,
+          strokeColor: "#925CE9",
+          fillColor: "#925CE9",
+          fillOpacity: 0.7,
+        }).setMap(map);
+
+        setPolygonLoaded(true); // 한 번만 그림
+      } catch (err) {
+        console.log("폴리곤 표시 오류: ", err);
+      }
+    }
+
+    addNeighborhoodPolygon();
+  }, [map, latitude, longitude, polygonLoaded]);
+
+  // -------- 장소검색은 기존과 동일 -------- //
   const searchPlaces = () => {
     if (!keyword.trim()) {
       alert("검색어를 입력하세요!");
@@ -188,6 +301,7 @@ export default function Main() {
     });
   };
 
+  // ------------- 기존 UI 구조 유지 ------------- //
   return (
     <Container>
       <Header />

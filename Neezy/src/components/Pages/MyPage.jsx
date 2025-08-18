@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Header from "../Layout/Header";
 import Nav from "../Layout/Nav";
@@ -24,7 +24,7 @@ const Main = styled.main`
   overflow-y: auto;
   overflow-x: hidden;
   padding: 16px;
-  background: #fff;
+  background: #f5f5f5;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -43,7 +43,6 @@ const ProfileImg = styled.img`
   height: 40px;
   border-radius: 50%;
   margin-bottom: 18px;
-  margin-top: 18px;
   object-fit: cover;
 `;
 
@@ -59,8 +58,7 @@ const InfoBox = styled.section`
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   padding: 20px;
-  margin-top: 15px;
-  margin-bottom: 152px;
+  margin-bottom: 32px;
   border: #ff9639 solid;
 `;
 
@@ -143,7 +141,7 @@ const LogoutSec = styled.section`
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 18px;
+  gap: 8px;
   width: 100%;
   margin-bottom: 10px; /* 네브바 위 공간 약간 확보 */
 `;
@@ -156,17 +154,44 @@ const GrayBtn = styled.button`
   cursor: pointer;
 `;
 
-export default function MyPage() {
-  const initialData = {
-    email: "minwoo@example.com",
-    name: "김민우",
-    age: "25",
-    gender: "남",
-  };
-
-  const [info, setInfo] = useState(initialData);
+export default function MyPage({ memberId }) {
+  const [info, setInfo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [editMode, setEditMode] = useState(false);
-  const [editInfo, setEditInfo] = useState(initialData);
+  const [editInfo, setEditInfo] = useState(null);
+
+  useEffect(() => {
+    async function fetchMember() {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`/api/members/${memberId}`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setInfo({
+          email: data.email,
+          name: data.name,
+          age: data.age.toString(),
+          gender: data.gender === "MALE" ? "남" : "여",
+          role: data.role,
+        });
+        setEditInfo({
+          email: data.email,
+          name: data.name,
+          age: data.age.toString(),
+          gender: data.gender === "MALE" ? "남" : "여",
+        });
+      } catch (err) {
+        setError(err.message || "불러오기 실패");
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchMember();
+  }, [memberId]);
 
   const handleEditClick = () => {
     setEditInfo(info);
@@ -177,26 +202,90 @@ export default function MyPage() {
     setEditInfo({ ...editInfo, [e.target.name]: e.target.value });
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    setInfo(editInfo);
-    setEditMode(false);
-    alert("임시 데이터로 수정 완료 (서버 연동 없음)");
+
+    const genderValue = editInfo.gender === "남" ? "MALE" : "FEMALE";
+
+    try {
+      const response = await fetch(`/api/members/${memberId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: editInfo.name,
+          age: Number(editInfo.age),
+          email: editInfo.email,
+          gender: genderValue,
+        }),
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`수정 실패: ${response.status} ${errorText}`);
+      }
+      setInfo({ ...editInfo });
+      setEditMode(false);
+      alert("정보가 성공적으로 수정되었습니다.");
+    } catch (err) {
+      alert(err.message);
+    }
   };
 
   const handleCancel = () => {
     setEditMode(false);
   };
 
-  const handleLogout = () => {
-    alert("임시 로그아웃 처리 (서버 없음)");
-  };
-
-  const handleDeleteMember = () => {
-    if (window.confirm("정말 탈퇴하시겠습니까?")) {
-      alert("임시 탈퇴 완료 (서버 없음)");
+  const handleLogout = async () => {
+    try {
+      const response = await fetch("/api/oauth/logout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        // body가 필요하면 추가 (없으면 제거)
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`로그아웃 실패: ${response.status} ${errorText}`);
+      }
+      const data = await response.json();
+      alert(data.message || "로그아웃 성공");
+      // 로그아웃 후 리다이렉트나 상태 초기화 처리
+    } catch (err) {
+      alert(err.message);
     }
   };
+
+  const handleDeleteMember = async () => {
+    if (!window.confirm("정말 회원 탈퇴 하시겠습니까?")) return;
+
+    try {
+      const response = await fetch(`/api/members/${memberId}`, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        // 보통 DELETE에 body 미포함, 필요하면 서버와 협의
+      });
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`탈퇴 실패: ${response.status} ${errorText}`);
+      }
+      const data = await response.json();
+      alert(data.message || "회원 탈퇴 완료");
+      // 탈퇴 후 페이지 이동 등 처리
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  if (loading)
+    return (
+      <Root>
+        <div>로딩 중...</div>
+      </Root>
+    );
+  if (error)
+    return (
+      <Root>
+        <div>에러: {error}</div>
+      </Root>
+    );
 
   return (
     <Root>
