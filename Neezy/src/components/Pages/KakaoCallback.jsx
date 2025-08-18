@@ -13,15 +13,15 @@ export default function KakaoCallback() {
       return;
     }
 
-    const REST_API_KEY = process.env.REACT_APP_KAKAO_REST_KEY;
-    const REDIRECT_URI = process.env.REACT_APP_KAKAO_REDIRECT_URI;
+    const REST_API_KEY = import.meta.env.VITE_KAKAO_REST_KEY;
+    const REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
 
     const getToken = async () => {
       try {
         const response = await fetch("https://kauth.kakao.com/oauth/token", {
           method: "POST",
           headers: {
-            "Content-Type": "application/x-www-form-urlencoded,charset=utf-8",
+            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
           },
           body: new URLSearchParams({
             grant_type: "authorization_code",
@@ -43,7 +43,7 @@ export default function KakaoCallback() {
         const useResponse = await fetch("https://kapi.kakao.com/v2/user/me", {
           headers: {
             Authorization: `Bearer ${data.access_token}`,
-            Content_Type: "application?x-www-form-urlencoded;charset=utf-8",
+            // Content_Type: "application?x-www-form-urlencoded;charset=utf-8",
           },
         });
 
@@ -56,7 +56,7 @@ export default function KakaoCallback() {
         console.log("사용자 정보: ", userData);
 
         alert(`환영합니다, ${userData.kakao_account.profile.nickname}님!!`);
-        navigate("/");
+        navigate("/main");
       } catch (err) {
         setError("오류가 발생했습니다.");
         console.error(err);
