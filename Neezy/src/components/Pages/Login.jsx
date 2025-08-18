@@ -33,8 +33,8 @@ const googleBtnStyle = {
 
 const Login = () => {
     const handleKakaoLogin = () => {
-        const REST_API_KEY = process.env.REACT_APP_KAKAO_REST_KEY;
-        const REDIRECT_URI = process.env.REACT_APP_KAKAO_REDIRECT_URI;
+        const KAKAO_REST_KEY = import.meta.env.VITE_KAKAO_REST_KEY;
+        const KAKAO_REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
         const kakaoAuthUrl = `https://kauth.kakao.com/oauth/authorize?response_type=code&client_id=${REST_API_KEY}&redirect_uri=${REDIRECT_URI}`;
         
         console.log("카카오 로그인 버튼 클릭됨");
