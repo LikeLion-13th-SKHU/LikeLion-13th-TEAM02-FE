@@ -9,6 +9,7 @@ import Login from "./components/Pages/Login";
 import KakaoCallback from "./components/Pages/KakaoCallback";
 import RedirectPage from "./components/Pages/Redirect";
 import RoleSelect from "./components/Pages/RoleSelect";
+import GoogleCallback from "./components/Pages/GoogleCallback";
 
 export default function App() {
   useEffect(() => {
@@ -31,6 +32,7 @@ export default function App() {
         <Route path="/auth/kakao/callback" element={<KakaoCallback />} />
         <Route path="/auth/kakao/callback" element={<KakaoCallback />} />
         <Route path="/roleselect" element={<RoleSelect />} />
+        <Route path="/auth/google/callback" element={<GoogleCallback />} />
       </Routes>
     </Router>
   );
