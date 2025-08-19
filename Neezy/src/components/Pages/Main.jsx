@@ -135,7 +135,7 @@ const CloseButton = styled.button`
   font-size: 20px;
   cursor: pointer;
 `;
-/** BottomSheet 컴포넌트 (기존 그대로) **/
+/** BottomSheet 컴포넌트 (기존 그대로) */
 function BottomSheet({ onClose, children }) {
   return (
     <Overlay onClick={onClose}>
@@ -147,19 +147,19 @@ function BottomSheet({ onClose, children }) {
   );
 }
 
-/** Main 페이지 **/
+/** Main 페이지 */
 export default function Main() {
   const mapRef = useRef(null);
   const placesRef = useRef(null);
   const [map, setMap] = useState(null);
   const [keyword, setKeyword] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [latitude, setLatitude] = useState(null);
-  const [longitude, setLongitude] = useState(null);
-  const [polygonLoaded, setPolygonLoaded] = useState(false); // 폴리곤 중복 방지
   const navigate = useNavigate();
 
-  // 1. 내 위치 받아오기
+  // 내 위치 받아오기
+  const [latitude, setLatitude] = useState(null);
+  const [longitude, setLongitude] = useState(null);
+
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -168,7 +168,6 @@ export default function Main() {
           setLongitude(position.coords.longitude);
         },
         () => {
-          // 실패 시 서울 시청 기본 좌표 사용
           setLatitude(37.5665);
           setLongitude(126.978);
         }
@@ -179,7 +178,7 @@ export default function Main() {
     }
   }, []);
 
-  // 2. 카카오맵 생성 (최초 1회)
+  // 카카오맵 생성 (최초 1회)
   useEffect(() => {
     if (
       window.kakao &&
@@ -200,94 +199,19 @@ export default function Main() {
     }
   }, [latitude, longitude, map]);
 
-  // 3. 내 동(행정구역) 폴리곤 표시
-  useEffect(() => {
-    if (!map || !latitude || !longitude || polygonLoaded) return;
-
-    // 3-1. 동이름 찾기 (coord2RegionCode)
-    function findNeighborhood() {
-      return new Promise((resolve, reject) => {
-        const geocoder = new window.kakao.maps.services.Geocoder();
-        geocoder.coord2RegionCode(longitude, latitude, (result, status) => {
-          if (status === window.kakao.maps.services.Status.OK) {
-            resolve(result[0].region_3depth_name);
-          } else {
-            reject(status);
-          }
-        });
-      });
-    }
-
-    // 3-2. GeoJSON 데이터에서 동의 좌표 추출
-    async function findNeighborhoodCoordinates(neighborhoodName) {
-      const response = await fetch("/222.json");
-      const data = await response.json();
-
-      // 데이터 구조 확인
-      console.log("받은 GeoJSON 데이터(features):", data.features);
-      // 찾으려는 동 이름 확인
-      console.log("찾는 동 이름:", neighborhoodName);
-
-      for (const feature of data.features) {
-        // 모든 동 이름을 출력해보기(매칭 가능한지 체크)
-        console.log(
-          "feature.properties.EMD_KOR_NM:",
-          feature.properties.EMD_KOR_NM
-        );
-        if (neighborhoodName === feature.properties.EMD_KOR_NM) {
-          console.log("===> 찾았다! 좌표:", feature.geometry.coordinates);
-          return feature.geometry.coordinates;
-        }
-      }
-      // 못 찾았을 때
-      console.log("해당 동을 찾지 못함");
-      return null;
-    }
-
-    // 3-3. 폴리곤 지도에 표시
-    async function addNeighborhoodPolygon() {
-      try {
-        const neighborhoodName = await findNeighborhood();
-        const coordinates = await findNeighborhoodCoordinates(neighborhoodName);
-        if (!coordinates) return;
-
-        const polygonPath = [];
-        const utmk =
-          "+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs";
-        const wgs84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
-        const transformer = proj4(utmk, wgs84);
-
-        coordinates.forEach((coordinateArray) => {
-          coordinateArray.forEach((coordinate) => {
-            const [longi, lati] = transformer.forward(coordinate);
-            polygonPath.push(new window.kakao.maps.LatLng(lati, longi));
-          });
-        });
-
-        new window.kakao.maps.Polygon({
-          path: polygonPath,
-          strokeColor: "#925CE9",
-          fillColor: "#925CE9",
-          fillOpacity: 0.7,
-        }).setMap(map);
-
-        setPolygonLoaded(true); // 한 번만 그림
-      } catch (err) {
-        console.log("폴리곤 표시 오류: ", err);
-      }
-    }
-
-    addNeighborhoodPolygon();
-  }, [map, latitude, longitude, polygonLoaded]);
-
-  // -------- 장소검색은 기존과 동일 -------- //
+  // 검색 → 행정동 폴리곤 표시
   const searchPlaces = () => {
     if (!keyword.trim()) {
       alert("검색어를 입력하세요!");
       return;
     }
-    placesRef.current.keywordSearch(keyword, (data, status) => {
-      if (status === window.kakao.maps.services.Status.OK) {
+    if (!map) {
+      alert("지도가 준비되지 않았습니다.");
+      return;
+    }
+
+    placesRef.current.keywordSearch(keyword, async (data, status) => {
+      if (status === window.kakao.maps.services.Status.OK && data.length > 0) {
         const place = data[0];
         const coords = new window.kakao.maps.LatLng(place.y, place.x);
         map.setCenter(coords);
@@ -295,13 +219,79 @@ export default function Main() {
           map: map,
           position: coords,
         });
+
+        try {
+          // 1. 공공데이터 API 호출해서 법정동코드 찾기
+          const query = encodeURIComponent(keyword);
+          const serviceKey =
+            "%2F%2FMfJqQQaQ41AVYKyHWY1OAN7QGjkZHHl03DCC7%2FJOX%2B%2FRNPchYl%2BjaqcqNF36u2LWTlqK0yHsLYHFDAhOd0TA%3D%3D";
+
+          const url = `https://api.odcloud.kr/api/15063424/v1/uddi:257e1510-0eeb-44de-8883-8295c94dadf7?읍면동명=${query}&serviceKey=${serviceKey}`;
+
+          const response = await fetch(url);
+          const json = await response.json();
+
+          if (!json.data || json.data.length === 0) {
+            alert("공공데이터에서 일치하는 법정동코드를 찾지 못했습니다.");
+            return;
+          }
+
+          // 2. 첫 번째 결과의 법정동코드 획득
+          const rawEmdCd = json.data[0].법정동코드.toString();
+
+          // 3. 10자리면 뒤 2자리 '00' 제거, 8자리면 그대로 사용
+          const emdCdTrimmed =
+            rawEmdCd.length === 10 ? rawEmdCd.slice(0, 8) : rawEmdCd;
+
+          // 4. geoJSON 불러오기
+          const geoResponse = await fetch("/222.json");
+          const geoJson = await geoResponse.json();
+
+          // 5. geoJSON에선 10자리 코드이므로 다시 '00' 붙여 비교
+          const fullEmdCd = emdCdTrimmed + "00";
+
+          const feature = geoJson.features.find(
+            (f) => f.properties.EMD_CD === fullEmdCd
+          );
+
+          if (!feature) {
+            console.log("geoJSON EMD_CD 목록:", emdCdTrimmed);
+
+            alert("geoJSON 데이터에서 일치하는 폴리곤을 찾지 못했습니다.");
+            return;
+          }
+
+          // 6. 폴리곤 그리기
+          const coordinates = feature.geometry.coordinates;
+          const polygonPath = [];
+          const utmk =
+            "+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs";
+          const wgs84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
+          const transformer = proj4(utmk, wgs84);
+
+          coordinates.forEach((coordinateArray) => {
+            coordinateArray.forEach((coord) => {
+              const [longi, lati] = transformer.forward(coord);
+              polygonPath.push(new window.kakao.maps.LatLng(lati, longi));
+            });
+          });
+
+          new window.kakao.maps.Polygon({
+            path: polygonPath,
+            strokeColor: "#925CE9",
+            fillColor: "#925CE9",
+            fillOpacity: 0.7,
+          }).setMap(map);
+        } catch (error) {
+          console.error("법정동코드 조회 또는 폴리곤 그리기 실패:", error);
+          alert("분석 중 오류가 발생했습니다.");
+        }
       } else {
         alert("검색 결과가 없습니다.");
       }
     });
   };
 
-  // ------------- 기존 UI 구조 유지 ------------- //
   return (
     <Container>
       <Header />
