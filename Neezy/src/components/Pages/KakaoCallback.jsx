@@ -18,6 +18,7 @@ export default function KakaoCallback() {
 
     const getToken = async () => {
       try {
+        // 1. 카카오 OAuth 토큰 요청
         const response = await fetch("https://kauth.kakao.com/oauth/token", {
           method: "POST",
           headers: {
@@ -38,24 +39,34 @@ export default function KakaoCallback() {
         }
 
         const data = await response.json();
-        console.log("액세스 토큰", data.access_token);
+        console.log("카카오 액세스 토큰", data.access_token);
 
-        const useResponse = await fetch("https://kapi.kakao.com/v2/user/me", {
-          headers: {
-            Authorization: `Bearer ${data.access_token}`,
-            // Content_Type: "application?x-www-form-urlencoded;charset=utf-8",
-          },
-        });
+        // 2. 백엔드 로그인 API 호출 (카카오 토큰 전달)
+        const loginResponse = await fetch(
+          "https://junyeong.store/api/auth/login/kakao",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ accessToken: data.access_token }),
+          }
+        );
 
-        if (!useResponse.ok) {
-          setError("사용자 정보 요청 실패");
+        if (!loginResponse.ok) {
+          const loginError = await loginResponse.json();
+          setError(`로그인 실패: ${loginError.message || loginError.error}`);
           return;
         }
 
-        const userData = await useResponse.json();
-        console.log("사용자 정보: ", userData);
+        const loginData = await loginResponse.json();
+        console.log("로그인 서버 응답:", loginData);
 
-        alert(`환영합니다, ${userData.kakao_account.profile.nickname}님!!`);
+        // 3. 로그인 성공 시 앱 상태 및 로컬 스토리지 저장
+        localStorage.setItem("accessToken", loginData.accessToken);
+        localStorage.setItem("memberId", loginData.memberId);
+
+        alert(`환영합니다!`);
         navigate("/main");
       } catch (err) {
         setError("오류가 발생했습니다.");

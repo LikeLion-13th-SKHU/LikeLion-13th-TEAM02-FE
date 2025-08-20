@@ -166,7 +166,9 @@ export default function MyPage({ memberId }) {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/members/${memberId}`);
+        const response = await fetch(
+          `http://junyeong.store/api/members/${memberId}`
+        );
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -208,16 +210,19 @@ export default function MyPage({ memberId }) {
     const genderValue = editInfo.gender === "남" ? "MALE" : "FEMALE";
 
     try {
-      const response = await fetch(`/api/members/${memberId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: editInfo.name,
-          age: Number(editInfo.age),
-          email: editInfo.email,
-          gender: genderValue,
-        }),
-      });
+      const response = await fetch(
+        `http://junyeong.store/api/members/${memberId}`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: editInfo.name,
+            age: Number(editInfo.age),
+            email: editInfo.email,
+            gender: genderValue,
+          }),
+        }
+      );
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`수정 실패: ${response.status} ${errorText}`);
@@ -236,7 +241,7 @@ export default function MyPage({ memberId }) {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("/api/oauth/logout", {
+      const response = await fetch("http://junyeong.store/api/oauth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // body가 필요하면 추가 (없으면 제거)
@@ -257,11 +262,14 @@ export default function MyPage({ memberId }) {
     if (!window.confirm("정말 회원 탈퇴 하시겠습니까?")) return;
 
     try {
-      const response = await fetch(`/api/members/${memberId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        // 보통 DELETE에 body 미포함, 필요하면 서버와 협의
-      });
+      const response = await fetch(
+        `http://junyeong.store/api/members/${memberId}`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          // 보통 DELETE에 body 미포함, 필요하면 서버와 협의
+        }
+      );
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`탈퇴 실패: ${response.status} ${errorText}`);
