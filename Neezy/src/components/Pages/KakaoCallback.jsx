@@ -56,7 +56,7 @@ export default function KakaoCallback() {
         console.log("사용자 정보: ", userData);
 
         alert(`환영합니다, ${userData.kakao_account.profile.nickname}님!!`);
-        navigate("/main");
+        navigate("/roleselect");
       } catch (err) {
         setError("오류가 발생했습니다.");
         console.error(err);

@@ -77,7 +77,7 @@ export default function RoleSelect() {
 
   const handleRoleSelect = (role) => {
     console.log('선택한 역할:', role);
-    navigate('/', { state: {role} });
+    navigate('/main', { state: {role} });
   };
 
   return (
