@@ -13,57 +13,46 @@ export default function KakaoCallback() {
       return;
     }
 
-    const REST_API_KEY = import.meta.env.VITE_KAKAO_REST_KEY;
-    const REDIRECT_URI = import.meta.env.VITE_KAKAO_REDIRECT_URI;
-
-    const getToken = async () => {
+    const getTokenFromBackend = async () => {
       try {
-        const response = await fetch("https://kauth.kakao.com/oauth/token", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/x-www-form-urlencoded;charset=utf-8",
-          },
-          body: new URLSearchParams({
-            grant_type: "authorization_code",
-            client_id: REST_API_KEY,
-            redirect_uri: REDIRECT_URI,
-            code: code,
-          }),
-        });
+        const response = await fetch(
+          `https://junyeong.store/login/oauth2/code/kakao?code=${code}`,
+          {
+            method: "GET",
+            headers: {
+              Accept: "application/json",
+            },
+          }
+        );
+
+        const text = await response.text();
+        console.log("응답 텍스트:", text);
 
         if (!response.ok) {
-          const errorData = await response.json();
-          setError(`토큰 요청 실패: ${errorData.error_description}`);
+          let errorMessage = `로그인 실패: ${response.statusText}`;
+          try {
+            const errorData = JSON.parse(text);
+            errorMessage = errorData.message || errorMessage;
+          } catch {
+            // JSON 파싱 실패 시 기본 메시지 유지
+          }
+          setError(errorMessage);
           return;
         }
 
-        const data = await response.json();
-        console.log("액세스 토큰", data.access_token);
+        const data = JSON.parse(text);
+        localStorage.setItem("accessToken", data.access_token);
+        localStorage.setItem("memberId", data.memberId);
 
-        const useResponse = await fetch("https://kapi.kakao.com/v2/user/me", {
-          headers: {
-            Authorization: `Bearer ${data.access_token}`,
-            // Content_Type: "application?x-www-form-urlencoded;charset=utf-8",
-          },
-        });
-
-        if (!useResponse.ok) {
-          setError("사용자 정보 요청 실패");
-          return;
-        }
-
-        const userData = await useResponse.json();
-        console.log("사용자 정보: ", userData);
-
-        alert(`환영합니다, ${userData.kakao_account.profile.nickname}님!!`);
+        alert("환영합니다!");
         navigate("/main");
       } catch (err) {
-        setError("오류가 발생했습니다.");
+        setError("서버 요청 중 오류가 발생했습니다.");
         console.error(err);
       }
     };
 
-    getToken();
+    getTokenFromBackend();
   }, [location, navigate]);
 
   return (
