@@ -2,6 +2,7 @@ import React from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import Header from '../Layout/Header';
+import axios from 'axios';
 
 const Container = styled.div`
  position: relative;
@@ -75,9 +76,26 @@ const RoleButton = styled.button`
 export default function RoleSelect() {
   const navigate = useNavigate();
 
-  const handleRoleSelect = (role) => {
-    console.log('선택한 역할:', role);
-    navigate('/main', { state: {role} });
+  const handleRoleSelect = async (role) => {
+    try {
+      const memberId = localStorage.getItem('memberId');
+      const token = localStorage.getItem("accessToken");
+
+      if (!memberId || !token) {
+        alert("로그인 정보가 없습니다. 다시 로그인해주세요.");
+        return;
+      }
+
+      await axios.patch('https://junyeong.store/api/members/${memberId}/role', 
+        { role: role === '고객' ? 'USER' : 'FOUNDER'},
+      { header: { Authorization: `Bear ${token}` }}
+      );
+
+      navigate('/main', {state: {role} });
+    } catch (err) {
+      console.error("역할 선택 API 오류:", err);
+      alert("역할 선택 중 문제가 발생했습니다.");
+    }
   };
 
   return (
