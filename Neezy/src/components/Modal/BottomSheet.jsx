@@ -2,6 +2,8 @@
 import React, { useState } from "react";
 import styled, { keyframes } from "styled-components";
 import { useNavigate } from "react-router-dom";
+import Nav from "../Layout/Nav";
+
 
 const OverlayFadeIn = keyframes`
   from { opacity: 0; }
@@ -39,6 +41,7 @@ const Sheet = styled.div`
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.2);
   padding: 16px;
   overflow-y: auto;
+  padding-bottom: 60px;
 `;
 
 const CloseButton = styled.button`
@@ -53,13 +56,14 @@ const CloseButton = styled.button`
 
 const Logo = styled.img`
   width: 120px;
-  margin-bottom: 20px;
+  margin-bottom: 10px;
 `;
 
 const Stats = styled.div`
   display: flex;
   justify-content: space-around;
   margin-bottom: 20px;
+  font-weight: 700;
 `;
 
 const StatBox = styled.div`
@@ -74,21 +78,24 @@ const CommentButton = styled.div`
   border: none;
   border-radius: 8px;
   font-weight: 600;
-  margin-bottom: 20px;
-
-  &:hover {
-    background-color: #3458d1;
-  }
+  margin-bottom: 40px;
 `;
 
 const AISolution = styled.div`
   padding: 15px;
-  border: 1px solid #ddd;
+  border: 3px solid #FFB516;
   border-radius: 8px;
 `;
 
+const img = styled.img`
+  width: 10px;
+  display: block;
+  margin: 0 auto 20px auto;
+`;
+
+
 // BottomSheet 내부에서 모달 작업 상태를 관리하고 컨텐츠도 동적으로 작성 가능
-export default function BottomSheet({ onClose }) {
+export default function BottomSheet({ onClose, keyword }) {
   // 내부 상태 예시: 분석 결과 텍스트
 
   const navigate = useNavigate();
@@ -97,25 +104,69 @@ export default function BottomSheet({ onClose }) {
     navigate("/comment")
   };
 
+  const CommentButton = styled.button`
+    width: 80%;
+    padding:  6px 0;
+    background-color: #FFB516;
+    color: white;
+    border: none;
+    border-radius: 16px;
+    font-weight: 600;
+    font-size: 18px;
+    margin: 0 auto 20px auto;
+    display: block;
+    text-align: center;
+  `;
+
+  const Title = styled.h2`
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 10px
+  `;
+
+  const Divider = styled.div`
+    width: 100%;
+    height: 2px;
+    background-color: #ddd;
+    margin-bottom: 20px;
+  `;
+
+  const FixedWrapper = styled.div`
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+  `;
+
   return (
     <Overlay onClick={onClose}>
       <Sheet onClick={(e) => e.stopPropagation()}>
         <CloseButton onClick={onClose}>✕</CloseButton>
-        <h2>분석 결과</h2>
-        <Logo src="/img/Neezy로고.png" alt="Neezy 로고" />
+        <Title>{keyword ? `${keyword} 상권 정보` : "분석 결과"}</Title>
+        <Divider />
+        <Logo src="/img/Neezy 로고.png" alt="Neezy 로고" />
         <Stats>
           <StatBox>
-            <div>음식점 10개</div>
+            <div>음식점<br /> 4개</div>
           </StatBox>
           <StatBox>
-            <div>편의점 5개</div>
+            <div>편의점<br /> 5개</div>
           </StatBox>
           <StatBox>
-            <div>병원 개</div>
+            <div>카페<br /> 3개</div>
+          </StatBox>
+          <StatBox>
+            <div>병원<br /> 2개</div>
           </StatBox>
         </Stats>
-        <button onClick={gotoComment}>코멘트</button>
-        <p>하이</p>
+        <CommentButton onClick={gotoComment}>코멘트</CommentButton>
+        <AISolution>
+          <h3>ai와 함께하는 종합 솔루션 서비스</h3>
+        </AISolution>
+        <FixedWrapper>
+          <Nav />
+        </FixedWrapper>
       </Sheet>
     </Overlay>
   );

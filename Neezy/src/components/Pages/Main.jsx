@@ -247,7 +247,10 @@ export default function Main() {
         <NeedButton onClick={() => navigate("/chatbot")}>필요해요</NeedButton>
       </ContentArea>
       <Nav />
-      {showModal && <BottomSheet onClose={() => setShowModal(false)} />}
+      {showModal && ( <BottomSheet onClose={() => setShowModal(false)}
+      keyword={keyword} 
+      />
+          )}
     </Container>
   );
 }
