@@ -50,6 +50,42 @@ const CloseButton = styled.button`
   cursor: pointer;
 `;
 
+const Logo = styled.img`
+  width: 120px;
+  margin-bottom: 20px;
+`;
+
+const Stats = styled.div`
+  display: flex;
+  justify-content: space-around;
+  margin-bottom: 20px;
+`;
+
+const StatBox = styled.div`
+  text-align: center;
+`;
+
+const CommentButton = styled.div`
+  width: 100%;
+  padding: 10px;
+  background-color: #3c67ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  margin-bottom: 20px;
+
+  &:hover {
+    background-color: #3458d1;
+  }
+`;
+
+const AISolution = styled.div`
+  padding: 15px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+`;
+
 // BottomSheet 내부에서 모달 작업 상태를 관리하고 컨텐츠도 동적으로 작성 가능
 export default function BottomSheet({ onClose }) {
   // 내부 상태 예시: 분석 결과 텍스트
@@ -59,6 +95,19 @@ export default function BottomSheet({ onClose }) {
       <Sheet onClick={(e) => e.stopPropagation()}>
         <CloseButton onClick={onClose}>✕</CloseButton>
         <h2>분석 결과</h2>
+        <Logo src="/img/Neezy로고.png" alt="Neezy 로고" />
+        <Stats>
+          <StatBox>
+            <div>음식점 10개</div>
+          </StatBox>
+          <StatBox>
+            <div>편의점 5개</div>
+          </StatBox>
+          <StatBox>
+            <div>병원 개</div>
+          </StatBox>
+        </Stats>
+        <button onClick={gotoComment}>코멘트 보기</button>
         <p>하이</p>
       </Sheet>
     </Overlay>

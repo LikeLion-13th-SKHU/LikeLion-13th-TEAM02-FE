@@ -22,6 +22,7 @@ export default function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/roleselect" element={<RoleSelect />} />
         <Route path="/auth/google/callback" element={<GoogleCallback />} />
+        <Route path="/comment" element={<Comment />} />
       </Routes>
     </Router>
   );
