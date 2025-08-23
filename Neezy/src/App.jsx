@@ -6,7 +6,7 @@ import Main from "./components/Pages/Main";
 import ChatBot from "./components/Pages/ChatBot";
 import MyPage from "./components/Pages/MyPage";
 import Login from "./components/Pages/Login";
-
+import Comment from "./components/Pages/Comment";
 import RoleSelect from "./components/Pages/RoleSelect";
 import GoogleCallback from "./components/Pages/GoogleCallback";
 
@@ -19,7 +19,7 @@ export default function App() {
         <Route path="/main" element={<Main />} />
         <Route path="/chatbot" element={<ChatBot />} />
         <Route path="/mypage" element={<MyPage />} />
-        <Route path="/login" element={<Login />} />
+
         <Route path="/roleselect" element={<RoleSelect />} />
         <Route path="/auth/google/callback" element={<GoogleCallback />} />
         <Route path="/comment" element={<Comment />} />
