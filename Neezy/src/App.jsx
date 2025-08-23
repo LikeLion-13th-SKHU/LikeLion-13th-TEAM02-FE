@@ -1,7 +1,7 @@
 // src/App.jsx
 import React, { useEffect } from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-
+import KakaoCallback from "./components/Pages/KakaoCallback";
 import Main from "./components/Pages/Main";
 import ChatBot from "./components/Pages/ChatBot";
 import MyPage from "./components/Pages/MyPage";
@@ -15,11 +15,11 @@ export default function App() {
     <Router>
       <Routes>
         {/* / → RedirectPage → /login */}
+        <Route path="/login/oauth2/code/kakao" element={<KakaoCallback />} />
         <Route path="/" element={<Login />} />
         <Route path="/main" element={<Main />} />
         <Route path="/chatbot" element={<ChatBot />} />
         <Route path="/mypage" element={<MyPage />} />
-
         <Route path="/roleselect" element={<RoleSelect />} />
         <Route path="/auth/google/callback" element={<GoogleCallback />} />
         <Route path="/comment" element={<Comment />} />

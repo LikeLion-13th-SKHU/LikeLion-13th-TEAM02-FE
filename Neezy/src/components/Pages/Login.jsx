@@ -1,5 +1,4 @@
-import React, { useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import React, { useState } from "react";
 
 const kakaoBtnStyle = {
   display: "flex",
@@ -32,12 +31,9 @@ const googleBtnStyle = {
 };
 
 export default function Login() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const [error, setError] = useState(null);
   const [loadingMessage, setLoadingMessage] = useState(null);
 
-  // 카카오 로그인 URL 받아서 이동
   const handleKakaoLogin = async () => {
     setError(null);
     setLoadingMessage("카카오 로그인 페이지로 이동 중입니다...");
@@ -56,7 +52,6 @@ export default function Login() {
     }
   };
 
-  // 구글 로그인 예시(구현 방법 동일)
   const handleGoogleLogin = async () => {
     setError(null);
     setLoadingMessage("구글 로그인 페이지로 이동 중입니다...");
@@ -74,62 +69,6 @@ export default function Login() {
       console.error(err);
     }
   };
-
-  // 자동 로그인: 카카오 인가코드 있으면 토큰 요청
-  useEffect(() => {
-    const code = new URLSearchParams(location.search).get("code");
-    if (!code) return;
-
-    setError(null);
-    setLoadingMessage("로그인 처리 중입니다...");
-
-    const getTokenFromBackend = async () => {
-      try {
-        const response = await fetch(
-          `https://junyeong.store/login/oauth2/code/kakao?code=${code}`,
-          {
-            method: "GET",
-            headers: {
-              Accept: "application/json",
-            },
-          }
-        );
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => null);
-          const errorMessage =
-            errorData?.message || `로그인 실패: ${response.statusText}`;
-          setError(errorMessage);
-          setLoadingMessage(null);
-          return;
-        }
-        const data = await response.json();
-        console.log("Received data:", data);
-        if (data.accessToken && data.memberId) {
-          localStorage.setItem("accessToken", data.accessToken);
-          localStorage.setItem("memberId", data.memberId);
-        } else {
-          setError("서버 응답에 토큰 정보가 없습니다.");
-        }
-
-        alert("환영합니다!");
-        navigate("/main", { replace: true });
-      } catch (err) {
-        setError("서버 요청 중 오류가 발생했습니다.");
-        setLoadingMessage(null);
-        console.error(err);
-      }
-    };
-
-    getTokenFromBackend();
-  }, [location.search, navigate]);
-
-  // 토큰 있으면 즉시 /main으로
-  useEffect(() => {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      navigate("/main", { replace: true });
-    }
-  }, [navigate]);
 
   return (
     <div
@@ -149,7 +88,6 @@ export default function Login() {
       <br />
 
       {error && <p style={{ color: "red" }}>{error}</p>}
-
       {loadingMessage && <p>{loadingMessage}</p>}
 
       <button style={kakaoBtnStyle} onClick={handleKakaoLogin}>
