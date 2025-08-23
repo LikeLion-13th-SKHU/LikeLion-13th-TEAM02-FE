@@ -53,6 +53,7 @@ const SearchButton = styled.button`
   border-radius: 4px;
   cursor: pointer;
   font-weight: 600;
+  white-space: nowrap;
 
   &:hover {
     background-color: #3458d1;
