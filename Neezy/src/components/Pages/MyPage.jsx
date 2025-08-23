@@ -154,9 +154,8 @@ const GrayBtn = styled.button`
   cursor: pointer;
 `;
 
-// 생략: import 및 스타일 선언 부분 동일
-
-export default function MyPage({ memberId }) {
+export default function MyPage() {
+  const [memberId, setMemberId] = useState(null);
   const [info, setInfo] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -164,28 +163,28 @@ export default function MyPage({ memberId }) {
   const [editInfo, setEditInfo] = useState(null);
 
   useEffect(() => {
-    async function fetchMember() {
-      console.log("fetchMember 시작");
+    const storedMemberId = localStorage.getItem("memberId");
+    if (!storedMemberId) {
+      setError("회원 정보를 불러올 수 없습니다. 로그인이 필요합니다.");
+      setLoading(false);
+      return;
+    }
+    setMemberId(storedMemberId);
+  }, []);
 
+  useEffect(() => {
+    if (!memberId) return;
+
+    async function fetchMember() {
       setLoading(true);
       setError(null);
       try {
         const response = await fetch(`/api/members/${memberId}`);
-        const text = await response.text();
-
-        try {
-          const data = JSON.parse(text);
-          // 정상 JSON인 경우 처리
-        } catch (e) {
-          console.error("응답이 JSON이 아님:", text);
-          throw e; // 또는 적절한 에러 처리
-        }
-        console.log("fetch 응답 상태:", response.status);
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+          const text = await response.text();
+          throw new Error(`서버 에러: ${response.status} ${text}`);
         }
         const data = await response.json();
-        console.log("fetch 데이터:", data);
         setInfo({
           email: data.email,
           name: data.name,
@@ -200,31 +199,30 @@ export default function MyPage({ memberId }) {
           gender: data.gender === "MALE" ? "남" : "여",
         });
       } catch (err) {
-        console.error("fetchMember 에러:", err);
-        setError(err.message || "불러오기 실패");
+        setError(err.message || "회원 정보를 불러오는 데 실패했습니다.");
       } finally {
         setLoading(false);
-        console.log("fetchMember 종료, loading false");
       }
     }
-    console.log("useEffect 호출, memberId:", memberId);
     fetchMember();
   }, [memberId]);
 
   const handleEditClick = () => {
-    console.log("handleEditClick 호출, 현재 info:", info);
     setEditInfo(info);
     setEditMode(true);
   };
 
   const handleChange = (e) => {
-    console.log(`handleChange 호출: ${e.target.name} = ${e.target.value}`);
     setEditInfo({ ...editInfo, [e.target.name]: e.target.value });
   };
 
   const handleSave = async (e) => {
     e.preventDefault();
-    console.log("handleSave 호출, editInfo:", editInfo);
+
+    if (!memberId) {
+      alert("회원 정보를 불러올 수 없습니다.");
+      return;
+    }
 
     const genderValue = editInfo.gender === "남" ? "MALE" : "FEMALE";
 
@@ -239,7 +237,6 @@ export default function MyPage({ memberId }) {
           gender: genderValue,
         }),
       });
-      console.log("PATCH 응답 상태:", response.status);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`수정 실패: ${response.status} ${errorText}`);
@@ -248,24 +245,20 @@ export default function MyPage({ memberId }) {
       setEditMode(false);
       alert("정보가 성공적으로 수정되었습니다.");
     } catch (err) {
-      console.error("handleSave 에러:", err);
       alert(err.message);
     }
   };
 
   const handleCancel = () => {
-    console.log("handleCancel 호출");
     setEditMode(false);
   };
 
   const handleLogout = async () => {
-    console.log("handleLogout 호출");
     try {
       const response = await fetch("http://junyeong.store/api/oauth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });
-      console.log("로그아웃 응답 상태:", response.status);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`로그아웃 실패: ${response.status} ${errorText}`);
@@ -273,21 +266,23 @@ export default function MyPage({ memberId }) {
       const data = await response.json();
       alert(data.message || "로그아웃 성공");
     } catch (err) {
-      console.error("handleLogout 에러:", err);
       alert(err.message);
     }
   };
 
   const handleDeleteMember = async () => {
     if (!window.confirm("정말 회원 탈퇴 하시겠습니까?")) return;
-    console.log("handleDeleteMember 호출");
+
+    if (!memberId) {
+      alert("회원 정보를 불러올 수 없습니다.");
+      return;
+    }
 
     try {
       const response = await fetch(`/api/members/${memberId}`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
       });
-      console.log("회원탈퇴 응답 상태:", response.status);
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`탈퇴 실패: ${response.status} ${errorText}`);
@@ -295,7 +290,6 @@ export default function MyPage({ memberId }) {
       const data = await response.json();
       alert(data.message || "회원 탈퇴 완료");
     } catch (err) {
-      console.error("handleDeleteMember 에러:", err);
       alert(err.message);
     }
   };
@@ -319,7 +313,7 @@ export default function MyPage({ memberId }) {
       <Main>
         <ProfileSection>
           <ProfileImg src="/img/기본아이콘.png" alt="프로필" />
-          <ProfileName>{info.name}</ProfileName>
+          <ProfileName>{info?.name}</ProfileName>
         </ProfileSection>
 
         <InfoBox>
@@ -383,16 +377,16 @@ export default function MyPage({ memberId }) {
               style={{ display: "flex", flexDirection: "column", gap: "12px" }}
             >
               <InfoItem>
-                <InfoLabel>이메일: {info.email}</InfoLabel>
+                <InfoLabel>이메일: {info?.email}</InfoLabel>
               </InfoItem>
               <InfoItem>
-                <InfoLabel>이름: {info.name}</InfoLabel>
+                <InfoLabel>이름: {info?.name}</InfoLabel>
               </InfoItem>
               <InfoItem>
-                <InfoLabel>나이: {info.age}</InfoLabel>
+                <InfoLabel>나이: {info?.age}</InfoLabel>
               </InfoItem>
               <InfoItem>
-                <InfoLabel>성별: {info.gender}</InfoLabel>
+                <InfoLabel>성별: {info?.gender}</InfoLabel>
               </InfoItem>
             </div>
           )}

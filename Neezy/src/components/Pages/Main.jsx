@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef } from "react";
-import styled, { keyframes } from "styled-components";
 import proj4 from "proj4";
+import styled from "styled-components";
 import Header from "../Layout/Header";
 import Nav from "../Layout/Nav";
 import { useNavigate } from "react-router-dom";
+import BottomSheet from "../Modal/BottomSheet";
 
 const Container = styled.div`
   display: flex;
@@ -32,7 +33,7 @@ const SearchBox = styled.div`
   border-radius: 8px;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.3);
   display: flex;
-  z-index: 1100; /* 버튼들 위 */
+  z-index: 1100;
 `;
 
 const Input = styled.input`
@@ -52,8 +53,6 @@ const SearchButton = styled.button`
   border-radius: 4px;
   cursor: pointer;
   font-weight: 600;
-  white-space: nowrap;
-  writing-mode: horizontal-tb;
 
   &:hover {
     background-color: #3458d1;
@@ -87,67 +86,6 @@ const NeedButton = styled(Button)`
   right: 80px;
 `;
 
-// BottomSheet 모달 컴포넌트
-const OverlayFadeIn = keyframes`
-  from { opacity: 0; }
-  to { opacity: 1; }
-`;
-
-const SheetSlideUp = keyframes`
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
-`;
-
-const Overlay = styled.div`
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%; /* Container (375px) 전체 */
-  height: 100%; /* Container (800px) 전체 */
-  background-color: rgba(0, 0, 0, 0.5);
-  animation: ${OverlayFadeIn} 0.3s ease forwards;
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
-  z-index: 2000;
-  border-radius: inherit;
-`;
-
-const Sheet = styled.div`
-  position: relative;
-  width: 100%;
-  max-width: 375px;
-  height: calc(90% - 60px); /* 모바일 높이 90%에서 Nav(60px) 빼기 */
-  background-color: white;
-  border-radius: 20px 20px 0 0;
-  animation: ${SheetSlideUp} 0.3s ease forwards;
-  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.2);
-  padding: 16px;
-  overflow-y: auto;
-`;
-
-const CloseButton = styled.button`
-  position: absolute;
-  top: 12px;
-  right: 16px;
-  border: none;
-  background: transparent;
-  font-size: 20px;
-  cursor: pointer;
-`;
-/** BottomSheet 컴포넌트 (기존 그대로) */
-function BottomSheet({ onClose, children }) {
-  return (
-    <Overlay onClick={onClose}>
-      <Sheet onClick={(e) => e.stopPropagation()}>
-        <CloseButton onClick={onClose}>✕</CloseButton>
-        {children}
-      </Sheet>
-    </Overlay>
-  );
-}
-
-/** Main 페이지 */
 export default function Main() {
   const mapRef = useRef(null);
   const placesRef = useRef(null);
@@ -156,10 +94,10 @@ export default function Main() {
   const [showModal, setShowModal] = useState(false);
   const navigate = useNavigate();
 
-  // 내 위치 받아오기
   const [latitude, setLatitude] = useState(null);
   const [longitude, setLongitude] = useState(null);
 
+  // 내 위치 받아오기
   useEffect(() => {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -221,7 +159,6 @@ export default function Main() {
         });
 
         try {
-          // 1. 공공데이터 API 호출해서 법정동코드 찾기
           const query = encodeURIComponent(keyword);
           const serviceKey =
             "%2F%2FMfJqQQaQ41AVYKyHWY1OAN7QGjkZHHl03DCC7%2FJOX%2B%2FRNPchYl%2BjaqcqNF36u2LWTlqK0yHsLYHFDAhOd0TA%3D%3D";
@@ -236,18 +173,13 @@ export default function Main() {
             return;
           }
 
-          // 2. 첫 번째 결과의 법정동코드 획득
           const rawEmdCd = json.data[0].법정동코드.toString();
-
-          // 3. 10자리면 뒤 2자리 '00' 제거, 8자리면 그대로 사용
           const emdCdTrimmed =
             rawEmdCd.length === 10 ? rawEmdCd.slice(0, 8) : rawEmdCd;
 
-          // 4. geoJSON 불러오기
           const geoResponse = await fetch("/222.json");
           const geoJson = await geoResponse.json();
 
-          // 5. geoJSON에선 10자리 코드이므로 다시 '00' 붙여 비교
           const fullEmdCd = emdCdTrimmed + "00";
 
           const feature = geoJson.features.find(
@@ -261,7 +193,6 @@ export default function Main() {
             return;
           }
 
-          // 6. 폴리곤 그리기
           const coordinates = feature.geometry.coordinates;
           const polygonPath = [];
           const utmk =
@@ -315,12 +246,7 @@ export default function Main() {
         <NeedButton onClick={() => navigate("/chatbot")}>필요해요</NeedButton>
       </ContentArea>
       <Nav />
-      {showModal && (
-        <BottomSheet onClose={() => setShowModal(false)}>
-          <h2>분석 결과</h2>
-          <p>여기에 분석 내용이나 UI 구성을 넣으시면 됩니다.</p>
-        </BottomSheet>
-      )}
+      {showModal && <BottomSheet onClose={() => setShowModal(false)} />}
     </Container>
   );
 }

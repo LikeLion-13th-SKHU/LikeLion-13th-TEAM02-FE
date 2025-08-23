@@ -6,10 +6,15 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:8080", // 실제 백엔드 서버 주소:포트 입력
+        target: "http://localhost:8080",
         changeOrigin: true,
-        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, "/api"),
       },
+      "/login/oauth2": {
+        target: "http://localhost:8080",
+        changeOrigin: true,
+      },
+      // 필요한 다른 경로도 추가 가능
     },
   },
 });
