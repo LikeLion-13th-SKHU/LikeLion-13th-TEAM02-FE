@@ -1,6 +1,7 @@
 // BottomSheet.jsx
 import React, { useState } from "react";
 import styled, { keyframes } from "styled-components";
+import { useNavigate } from "react-router-dom";
 
 const OverlayFadeIn = keyframes`
   from { opacity: 0; }
@@ -90,6 +91,12 @@ const AISolution = styled.div`
 export default function BottomSheet({ onClose }) {
   // 내부 상태 예시: 분석 결과 텍스트
 
+  const navigate = useNavigate();
+
+  const gotoComment = () => {
+    navigate("/comment")
+  };
+
   return (
     <Overlay onClick={onClose}>
       <Sheet onClick={(e) => e.stopPropagation()}>
@@ -107,7 +114,7 @@ export default function BottomSheet({ onClose }) {
             <div>병원 개</div>
           </StatBox>
         </Stats>
-        <button onClick={gotoComment}>코멘트 보기</button>
+        <button onClick={gotoComment}>코멘트</button>
         <p>하이</p>
       </Sheet>
     </Overlay>
