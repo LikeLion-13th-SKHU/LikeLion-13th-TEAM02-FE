@@ -6,15 +6,17 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:8080",
+        target: "https://junyeong.store",
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, "/api"),
+        // rewrite 필요없으면 빼세요
+        // rewrite: (path) => path.replace(/^\/api/, ""),
+        secure: true, // 운영 환경에 따라 false로 조정 가능
       },
       "/login/oauth2": {
-        target: "http://localhost:8080",
+        target: "https://junyeong.store",
         changeOrigin: true,
+        secure: true,
       },
-      // 필요한 다른 경로도 추가 가능
     },
   },
 });

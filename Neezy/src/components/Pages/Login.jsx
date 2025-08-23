@@ -103,8 +103,14 @@ export default function Login() {
           return;
         }
         const data = await response.json();
-        localStorage.setItem("accessToken", data.accessToken);
-        localStorage.setItem("memberId", data.memberId);
+        console.log("Received data:", data);
+        if (data.accessToken && data.memberId) {
+          localStorage.setItem("accessToken", data.accessToken);
+          localStorage.setItem("memberId", data.memberId);
+        } else {
+          setError("서버 응답에 토큰 정보가 없습니다.");
+        }
+
         alert("환영합니다!");
         navigate("/main", { replace: true });
       } catch (err) {
