@@ -6,11 +6,11 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/api": {
+      "/api1": {
         target: "https://junyeong.store",
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => path.replace(/^\/api/, ""), // /api 제거하여 백엔드 실제 경로와 매칭
+        rewrite: (path) => path.replace(/^\/api1/, ""), // /api 제거하여 백엔드 실제 경로와 매칭
       },
     },
   },

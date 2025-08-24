@@ -19,7 +19,7 @@ export default function KakaoCallback() {
     const getTokenFromBackend = async () => {
       try {
         const response = await fetch(
-          `/api/login/oauth2/code/kakao?code=${code}`,
+          `/api1/login/oauth2/code/kakao?code=${code}`,
           {
             method: "GET",
             headers: { Accept: "application/json" },
@@ -44,7 +44,7 @@ export default function KakaoCallback() {
           localStorage.setItem("accessToken", data.accessToken);
           localStorage.setItem("memberId", data.memberId);
           alert("환영합니다!");
-          navigate("/main", { replace: true });
+          navigate("/roleselect", { replace: true });
         } else {
           setError("서버 응답에 토큰 정보가 없습니다.");
         }
