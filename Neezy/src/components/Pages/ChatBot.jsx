@@ -1,19 +1,68 @@
-import React from "react";
+import React,{useState} from "react";
 import Header from "../Layout/Header";
 import Nav from "../Layout/Nav";
 import styled from "styled-components";
+import axios from "axios";
 
 export default function ChatBot() {
+  const [messages, setMessages] = useState([
+    { sender: "bot", text: "안녕하세요! Neezy입니다! 창업 및 상권 관련 궁금한 점을 질문해 주세요."},
+  ]);
+  const [input, setInput] =useState("");
+
+  const sendMessage = async () => {
+    if (!input.trim()) return;
+
+    const token = localStorage.getItem("accessToken");
+    if (!token) {
+      alert("로그인이 필요합니다.");
+      return;
+    }
+
+    const newMessages = [...messages, {sender: "user", text: input}];
+    setMessages(newMessages);
+
+    try {
+      const res = await axios.post(
+        `https://junyeong.store/api/chat`,
+        {message: input},
+        {
+          headers: { 
+            "Content-Type": "application/json",
+             Authorization: `Bearer ${token}`,
+        },
+       }
+      );
+
+      const botReply = res?.data?.reply || "챗봇 응답이 없습니다.";
+      setMessages([...newMessages, {sender: "bot", text:botReply }]);
+    } catch (err) {
+      setMessages([...newMessages, {sender: "bot", text: "챗봇 응답 오류" }]);
+      console.error(err);
+    }
+
+    setInput("");
+  };
+
   return (
     <>
       <Header />
       <Container>
           <ChatWindow>
-
+            {messages.map((msg, i) => (
+              <Message key={i} $sender={msg.sender}>
+                <b>{msg.sender === "user" ? "나" : "챗봇"}:</b>{msg.text}
+              </Message>
+            ))}
           </ChatWindow>
           <InputArea>
-            <ChatInput placeholder="메시지를 입력하세요..." />
-            <SendButton>전송</SendButton>
+            <ChatInput 
+              placeholder="메시지를 입력하세요..." 
+              value={input} 
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && sendMessage()} 
+              />
+            <SendButton onClick={sendMessage}>전송</SendButton>
           </InputArea>
       </Container>
       <Nav />
@@ -39,6 +88,16 @@ const ChatWindow = styled.div`
   flex: 1;
   padding: 10px;
   overflow-y: auto;
+`;
+
+const Message = styled.div`
+  text-align: ${(props) => (props.$sender === "user" ? "right" : "left")};
+  margin: 5px 0;
+  display: block;
+  max-width: 70%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid #f97316;
 `;
 
 const InputArea =styled.div`
