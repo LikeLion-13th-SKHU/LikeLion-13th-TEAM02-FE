@@ -255,7 +255,7 @@ export default function MyPage() {
 
   const handleLogout = async () => {
     try {
-      const response = await fetch("http://junyeong.store/api/oauth/logout", {
+      const response = await fetch("api/oauth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       });

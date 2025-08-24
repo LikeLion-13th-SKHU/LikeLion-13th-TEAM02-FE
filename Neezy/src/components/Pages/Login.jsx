@@ -38,16 +38,14 @@ export default function Login() {
     setError(null);
     setLoadingMessage("카카오 로그인 페이지로 이동 중입니다...");
     try {
-      const response = await fetch(
-        "https://junyeong.store/login/oauth2/login-url/kakao"
-      );
+      const response = await fetch("/api/login/oauth2/login-url/kakao");
       if (!response.ok) throw new Error("로그인 URL 요청 실패");
       const data = await response.json();
       if (!data.url) throw new Error("로그인 URL이 응답에 없습니다.");
-      window.location.href = data.url;
+      window.location.href = data.url; // 카카오 인증 페이지로 이동
     } catch (err) {
       setLoadingMessage(null);
-      setError("카카오 로그인 URL을 가져오는 데 실패했습니다.");
+      setError("카카오 로그인 URL 로드 실패");
       console.error(err);
     }
   };
@@ -56,9 +54,7 @@ export default function Login() {
     setError(null);
     setLoadingMessage("구글 로그인 페이지로 이동 중입니다...");
     try {
-      const response = await fetch(
-        "https://junyeong.store/login/oauth2/login-url/google"
-      );
+      const response = await fetch("/api/login/oauth2/login-url/google");
       if (!response.ok) throw new Error("구글 로그인 URL 요청 실패");
       const data = await response.json();
       if (!data.url) throw new Error("구글 로그인 URL이 응답에 없습니다.");

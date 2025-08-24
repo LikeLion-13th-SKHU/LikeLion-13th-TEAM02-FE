@@ -19,10 +19,12 @@ export default function KakaoCallback() {
     const getTokenFromBackend = async () => {
       try {
         const response = await fetch(
-          `https://junyeong.store/login/oauth2/code/kakao?code=${code}`,
-          { method: "GET", headers: { Accept: "application/json" } }
+          `/api/login/oauth2/code/kakao?code=${code}`,
+          {
+            method: "GET",
+            headers: { Accept: "application/json" },
+          }
         );
-
         if (!response.ok) {
           const text = await response.text();
           let errorMessage = `로그인 실패: ${response.status}`;
@@ -36,7 +38,6 @@ export default function KakaoCallback() {
           setLoadingMessage(null);
           return;
         }
-
         const data = await response.json();
 
         if (data.accessToken && data.memberId) {
