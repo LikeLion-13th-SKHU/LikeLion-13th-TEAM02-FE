@@ -19,7 +19,7 @@ export default function KakaoCallback() {
     const getTokenFromBackend = async () => {
       try {
         const response = await fetch(
-          `/api1/login/oauth2/code/kakao?code=${code}`,
+          `https://junyeong.store/login/oauth2/code/kakao?code=${code}`,
           {
             method: "GET",
             headers: { Accept: "application/json" },

@@ -38,7 +38,9 @@ export default function Login() {
     setError(null);
     setLoadingMessage("카카오 로그인 페이지로 이동 중입니다...");
     try {
-      const response = await fetch("/api1/login/oauth2/login-url/kakao");
+      const response = await fetch(
+        "https://junyeong.store/login/oauth2/login-url/kakao"
+      );
       if (!response.ok) throw new Error("로그인 URL 요청 실패");
       const data = await response.json();
       if (!data.url) throw new Error("로그인 URL이 응답에 없습니다.");
@@ -54,7 +56,9 @@ export default function Login() {
     setError(null);
     setLoadingMessage("구글 로그인 페이지로 이동 중입니다...");
     try {
-      const response = await fetch("/api1/login/oauth2/login-url/google");
+      const response = await fetch(
+        "https://junyeong.store/login/oauth2/login-url/google"
+      );
       if (!response.ok) throw new Error("구글 로그인 URL 요청 실패");
       const data = await response.json();
       if (!data.url) throw new Error("구글 로그인 URL이 응답에 없습니다.");
