@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import styled from "styled-components";
 import Header from "../Layout/Header";
 import Nav from "../Layout/Nav";
-
+import { useNavigate } from "react-router-dom";
 const Root = styled.div`
   width: 375px;
   height: 800px;
@@ -24,7 +24,7 @@ const Main = styled.main`
   overflow-y: auto;
   overflow-x: hidden;
   padding: 16px;
-  background: #f5f5f5;
+  background: #fff;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -52,13 +52,15 @@ const ProfileName = styled.span`
 `;
 
 const InfoBox = styled.section`
-  width: 90%;
+  width: 80%;
+  height: 250px;
   max-width: 360px;
   background: #fff;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   padding: 20px;
-  margin-bottom: 32px;
+  margin-top: auto;
+  margin-bottom: 60px;
   border: #ff9639 solid;
 `;
 
@@ -66,7 +68,8 @@ const InfoHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-top: 5px;
+  margin-bottom: 30px;
 `;
 
 const BoxTitle = styled.span`
@@ -143,6 +146,7 @@ const LogoutSec = styled.section`
   align-items: center;
   gap: 8px;
   width: 100%;
+  margin-top: auto;
   margin-bottom: 10px; /* 네브바 위 공간 약간 확보 */
 `;
 
@@ -155,6 +159,7 @@ const GrayBtn = styled.button`
 `;
 
 export default function MyPage() {
+  const navigate = useNavigate();
   const [memberId, setMemberId] = useState(null);
   const [info, setInfo] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -166,7 +171,7 @@ export default function MyPage() {
     const storedMemberId = localStorage.getItem("memberId");
     if (!storedMemberId) {
       setError("회원 정보를 불러올 수 없습니다. 로그인이 필요합니다.");
-      setLoading(false);
+
       return;
     }
     setMemberId(storedMemberId);
@@ -175,28 +180,49 @@ export default function MyPage() {
   useEffect(() => {
     if (!memberId) return;
 
+    const token = localStorage.getItem("accessToken");
+
     async function fetchMember() {
       setLoading(true);
       setError(null);
       try {
-        const response = await fetch(`/api/members/${memberId}`);
+        const response = await fetch(
+          `https://junyeong.store/api/members/${memberId}`,
+          {
+            method: "GET", // 조회는 GET 요청이 일반적입니다
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
         if (!response.ok) {
           const text = await response.text();
           throw new Error(`서버 에러: ${response.status} ${text}`);
         }
         const data = await response.json();
         setInfo({
-          email: data.email,
-          name: data.name,
-          age: data.age.toString(),
-          gender: data.gender === "MALE" ? "남" : "여",
-          role: data.role,
+          email: data.email ?? "",
+          name: data.name ?? "",
+          age: data.age != null ? data.age.toString() : "",
+          gender:
+            data.gender === "MALE"
+              ? "남"
+              : data.gender === "FEMALE"
+              ? "여"
+              : "",
+          role: data.role ?? "",
         });
         setEditInfo({
-          email: data.email,
-          name: data.name,
-          age: data.age.toString(),
-          gender: data.gender === "MALE" ? "남" : "여",
+          email: data.email ?? "",
+          name: data.name ?? "",
+          age: data.age != null ? data.age.toString() : "",
+          gender:
+            data.gender === "MALE"
+              ? "남"
+              : data.gender === "FEMALE"
+              ? "여"
+              : "",
         });
       } catch (err) {
         setError(err.message || "회원 정보를 불러오는 데 실패했습니다.");
@@ -226,17 +252,25 @@ export default function MyPage() {
 
     const genderValue = editInfo.gender === "남" ? "MALE" : "FEMALE";
 
+    const token = localStorage.getItem("accessToken");
+
     try {
-      const response = await fetch(`/api/members/${memberId}`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: editInfo.name,
-          age: Number(editInfo.age),
-          email: editInfo.email,
-          gender: genderValue,
-        }),
-      });
+      const response = await fetch(
+        `https://junyeong.store/api/members/${memberId}`,
+        {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            name: editInfo.name ?? "",
+            age: Number(editInfo.age) || 0,
+            email: editInfo.email ?? "",
+            gender: genderValue ?? "",
+          }),
+        }
+      );
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`수정 실패: ${response.status} ${errorText}`);
@@ -254,17 +288,34 @@ export default function MyPage() {
   };
 
   const handleLogout = async () => {
+    const token = localStorage.getItem("accessToken");
     try {
-      const response = await fetch("api/oauth/logout", {
+      const response = await fetch("api1/login/oauth2/logout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
       });
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`로그아웃 실패: ${response.status} ${errorText}`);
       }
-      const data = await response.json();
-      alert(data.message || "로그아웃 성공");
+      const contentType = response.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        const data = await response.json();
+        alert(data.message || "로그아웃 성공");
+      } else {
+        const text = await response.text();
+        alert(text || "로그아웃 성공");
+      }
+
+      // 로그아웃 성공 시 토큰과 회원 ID 삭제
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("memberId");
+
+      // 로그인 페이지로 이동
+      navigate("/"); // useNavigate 훅으로 navigate 함수 받아서 사용
     } catch (err) {
       alert(err.message);
     }
@@ -278,11 +329,19 @@ export default function MyPage() {
       return;
     }
 
+    const token = localStorage.getItem("accessToken");
+
     try {
-      const response = await fetch(`/api/members/${memberId}`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-      });
+      const response = await fetch(
+        `https://junyeong.store/api/members/${memberId}`,
+        {
+          method: "DELETE",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       if (!response.ok) {
         const errorText = await response.text();
         throw new Error(`탈퇴 실패: ${response.status} ${errorText}`);
@@ -294,12 +353,6 @@ export default function MyPage() {
     }
   };
 
-  if (loading)
-    return (
-      <Root>
-        <div>로딩 중...</div>
-      </Root>
-    );
   if (error)
     return (
       <Root>
