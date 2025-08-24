@@ -1,9 +1,7 @@
-// BottomSheet.jsx
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import styled, { keyframes } from "styled-components";
 import { useNavigate } from "react-router-dom";
 import Nav from "../Layout/Nav";
-
 
 const OverlayFadeIn = keyframes`
   from { opacity: 0; }
@@ -83,31 +81,34 @@ const CommentButton = styled.div`
 
 const AISolution = styled.div`
   padding: 15px;
-  border: 3px solid #FFB516;
+  border: 3px solid #ffb516;
   border-radius: 8px;
 `;
 
-const img = styled.img`
-  width: 10px;
-  display: block;
-  margin: 0 auto 20px auto;
+const FixedWrapper = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
 `;
 
-
-// BottomSheet 내부에서 모달 작업 상태를 관리하고 컨텐츠도 동적으로 작성 가능
-export default function BottomSheet({ onClose, keyword }) {
-  // 내부 상태 예시: 분석 결과 텍스트
-
+export default function BottomSheet({ onClose }) {
+  const [region, setRegion] = useState("");
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const storedRegion = localStorage.getItem("region") || "";
+    setRegion(storedRegion);
+  }, []);
+
   const gotoComment = () => {
-    navigate("/comment")
+    navigate("/comment");
   };
 
-  const CommentButton = styled.button`
+  const CommentButtonStyled = styled.button`
     width: 80%;
-    padding:  6px 0;
-    background-color: #FFB516;
+    padding: 6px 0;
+    background-color: #ffb516;
     color: white;
     border: none;
     border-radius: 16px;
@@ -122,7 +123,7 @@ export default function BottomSheet({ onClose, keyword }) {
     text-align: center;
     font-size: 22px;
     font-weight: 700;
-    margin-bottom: 10px
+    margin-bottom: 10px;
   `;
 
   const Divider = styled.div`
@@ -132,35 +133,40 @@ export default function BottomSheet({ onClose, keyword }) {
     margin-bottom: 20px;
   `;
 
-  const FixedWrapper = styled.div`
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-  `;
-
   return (
     <Overlay onClick={onClose}>
       <Sheet onClick={(e) => e.stopPropagation()}>
         <CloseButton onClick={onClose}>✕</CloseButton>
-        <Title>{keyword ? `${keyword} 상권 정보` : "분석 결과"}</Title>
+        <Title>{region ? `${region} 상권 정보` : "분석 결과"}</Title>
         <Divider />
         <Logo src="/img/Neezy 로고.png" alt="Neezy 로고" />
         <Stats>
           <StatBox>
-            <div>음식점<br /> 4개</div>
+            <div>
+              음식점
+              <br /> 4개
+            </div>
           </StatBox>
           <StatBox>
-            <div>편의점<br /> 5개</div>
+            <div>
+              편의점
+              <br /> 5개
+            </div>
           </StatBox>
           <StatBox>
-            <div>카페<br /> 3개</div>
+            <div>
+              카페
+              <br /> 3개
+            </div>
           </StatBox>
           <StatBox>
-            <div>병원<br /> 2개</div>
+            <div>
+              병원
+              <br /> 2개
+            </div>
           </StatBox>
         </Stats>
-        <CommentButton onClick={gotoComment}>코멘트</CommentButton>
+        <CommentButtonStyled onClick={gotoComment}>코멘트</CommentButtonStyled>
         <AISolution>
           <h3>ai와 함께하는 종합 솔루션 서비스</h3>
         </AISolution>
