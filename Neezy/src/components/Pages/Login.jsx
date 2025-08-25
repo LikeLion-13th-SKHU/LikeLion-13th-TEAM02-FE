@@ -39,7 +39,7 @@ export default function Login() {
     setLoadingMessage("카카오 로그인 페이지로 이동 중입니다...");
     try {
       const response = await fetch(
-        "https://www.neezy.store/login/oauth2/login-url/kakao"
+        "https://www.neezy.store/login/oauth2/code/kakao"
       );
       if (!response.ok) throw new Error("로그인 URL 요청 실패");
       const data = await response.json();
