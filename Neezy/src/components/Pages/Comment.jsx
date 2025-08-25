@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import Select from "react-select";
 import Header from "../Layout/Header";
 import Nav from "../Layout/Nav";
 import styled from "styled-components";
@@ -11,7 +12,6 @@ const Root = styled.div`
   flex-direction: column;
   justify-content: space-between;
   overflow: hidden;
-  box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
   background-color: white;
 
   @media (max-width: 400px) {
@@ -29,8 +29,9 @@ const Main = styled.main`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 160px; /* 코멘트 폼 높이+네브바 높이 만큼 여유 */
+  padding-bottom: 160px; /* 고정된 코멘트 입력 공간 만큼 패딩 */
   text-align: center;
+  margin-top: 35px;
 `;
 
 const Section = styled.section`
@@ -43,9 +44,40 @@ const CommentBox = styled.div`
   padding: 12px;
   background: white;
   border-radius: 8px;
+  border: 1px solid orange;
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
+
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 `;
 
+const Writer = styled.div`
+  font-weight: 900;
+  font-size: 17px;
+  color: black;
+`;
+
+const CreatedAt = styled.div`
+  font-size: 12px;
+  color: #777;
+  margin-left: auto; /* 우측 정렬 */
+`;
+
+const Contents = styled.div`
+  font-size: 15px;
+  font-weight: 600;
+  color: #555;
+  white-space: pre-wrap; /* 줄바꿈 유지 */
+  text-align: left;
+`;
+const CategoryLabel = styled.div`
+  font-size: 12px;
+  margin-left: 5px;
+  margin-top: 5px;
+  color: #999; /* 연한 회색 */
+  font-weight: 600;
+`;
 const TitleInput = styled.input`
   width: 100%;
   padding: 8px;
@@ -67,13 +99,6 @@ const SubmitButton = styled.button`
   cursor: pointer;
 `;
 
-const Select = styled.select`
-  width: 100%;
-  padding: 8px;
-  margin-bottom: 8px;
-  box-sizing: border-box;
-`;
-
 const BackButton = styled.button`
   position: absolute;
   top: 60px;
@@ -83,7 +108,7 @@ const BackButton = styled.button`
   font-size: 24px;
   cursor: pointer;
   user-select: none;
-  color: #3c67ff;
+  color: black;
 
   &:hover {
     color: #3458d1;
@@ -92,50 +117,81 @@ const BackButton = styled.button`
 
 const CommentFormWrapper = styled.div`
   position: fixed;
-  bottom: 60px; /* 네브바 높이만큼 띄워줌 */
-  left: 0;
-  right: 0;
-  width: 375px;
-  background: white;
+  bottom: 60px; /* 네비게이션 바로 위 */
+
+  width: 340px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(10px);
   padding: 16px;
   box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
   z-index: 1500;
+  align-items: center;
+  text-align: center;
 
   @media (max-width: 400px) {
     width: 320px;
   }
 `;
 
+const categoryOptions = [
+  { value: "KOREAN", label: "한식" },
+  { value: "CHICKEN", label: "치킨집" },
+  { value: "PIZZA", label: "피자가게" },
+  { value: "BURGER", label: "햄버거집" },
+  { value: "SNACK_BAR", label: "분식집" },
+  { value: "JAPANESE", label: "일식" },
+  { value: "CHINESE", label: "중식" },
+  { value: "WESTERN", label: "양식" },
+  { value: "BBQ", label: "고기집" },
+  { value: "CAFETERIA", label: "백반집" },
+  { value: "DESSERT", label: "디저트 전문점" },
+  { value: "CAFE", label: "카페" },
+  { value: "BAKERY", label: "빵집" },
+  { value: "PC_ROOM", label: "PC방" },
+  { value: "KARAOKE", label: "노래방" },
+  { value: "BOWLING", label: "볼링장" },
+  { value: "BILLIARD", label: "당구장" },
+  { value: "ARCADE", label: "오락실" },
+  { value: "ESCAPE_ROOM", label: "방탈출" },
+  { value: "VR_ZONE", label: "VR 체험관" },
+  { value: "MOVIE_THEATER", label: "영화관" },
+  { value: "SPORTS_COMPLEX", label: "스포츠 시설" },
+  { value: "GYM", label: "헬스장" },
+  { value: "YOGA_PILATES", label: "요가/필라테스" },
+  { value: "CONVENIENCE_STORE", label: "편의점" },
+  { value: "MART", label: "대형마트" },
+  { value: "SUPERMARKET", label: "슈퍼마켓" },
+  { value: "PHARMACY", label: "약국" },
+  { value: "HOSPITAL", label: "병원" },
+  { value: "CLINIC", label: "의원" },
+  { value: "DENTAL", label: "치과" },
+  { value: "VET", label: "동물병원" },
+  { value: "HAIR_SHOP", label: "미용실" },
+  { value: "NAIL_SHOP", label: "네일샵" },
+  { value: "STUDY_CAFE", label: "스터디카페" },
+  { value: "LIBRARY", label: "도서관" },
+  { value: "ACADEMY", label: "학원" },
+  { value: "BANK", label: "은행" },
+  { value: "POST_OFFICE", label: "우체국" },
+  { value: "CULTURE_CENTER", label: "문화센터" },
+  { value: "KIDS_CARE", label: "어린이집/유치원" },
+  { value: "ETC", label: "기타" },
+];
+
 export default function Comment() {
   const [comments, setComments] = useState([]);
   const [title, setTitle] = useState("");
   const [contents, setContents] = useState("");
-  const [category, setCategory] = useState("BOWLING");
+  const [category, setCategory] = useState(categoryOptions[0]);
   const [region, setRegion] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const navigate = useNavigate();
 
-  const categoryOptions = [
-    "BOWLING",
-    "ICECREAM",
-    "PASTA",
-    "CAFE",
-    "RESTAURANT",
-    "BOOKSTORE",
-    "GYM",
-    "MOVIE",
-    "HOTEL",
-    "PARK",
-    "PC",
-  ];
-
   useEffect(() => {
     const storedRegion = localStorage.getItem("region");
-    if (storedRegion) {
-      setRegion(storedRegion);
-    }
+    if (storedRegion) setRegion(storedRegion);
   }, []);
 
   useEffect(() => {
@@ -186,13 +242,13 @@ export default function Comment() {
       return;
     }
 
-    localStorage.setItem("category", category);
+    localStorage.setItem("category", category.value);
 
     const postData = {
       title,
       contents,
       region,
-      category,
+      category: category.value,
     };
 
     try {
@@ -234,13 +290,11 @@ export default function Comment() {
 
   return (
     <Root>
+      <Header />
       <BackButton onClick={goBack} aria-label="뒤로가기">
         ←
       </BackButton>
-      <Header />
       <Main>
-        <h1>{region}</h1>
-
         {loading && <p>데이터를 불러오는 중...</p>}
         {error && <p style={{ color: "red" }}>{error}</p>}
 
@@ -250,33 +304,32 @@ export default function Comment() {
           ) : (
             comments.map((comment) => (
               <CommentBox key={comment.postId}>
-                <h3>{comment.title}</h3>
-                <p>{comment.contents}</p>
-                <small>
-                  {comment.category} |{" "}
-                  {new Date(comment.createdAt).toLocaleString()}
-                </small>
+                <div
+                  style={{ display: "flex", justifyContent: "space-between" }}
+                >
+                  <Writer>{comment.writer}</Writer>
+                  <CategoryLabel>{comment.category}</CategoryLabel>
+                  <CreatedAt>
+                    {new Date(comment.createdAt).toLocaleString()}
+                  </CreatedAt>
+                </div>
+                <Contents>{comment.contents}</Contents>
               </CommentBox>
             ))
           )}
         </Section>
       </Main>
-
       <CommentFormWrapper>
         <Section mt="0">
           <h2>코멘트 작성하기</h2>
           <form onSubmit={handleSubmit}>
             <Select
+              options={categoryOptions}
               value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              aria-label="카테고리 선택"
-            >
-              {categoryOptions.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </Select>
+              onChange={(selected) => setCategory(selected)}
+              isSearchable={true}
+              placeholder="카테고리를 선택하세요"
+            />
             <TitleInput
               type="text"
               value={title}
@@ -294,7 +347,6 @@ export default function Comment() {
           </form>
         </Section>
       </CommentFormWrapper>
-
       <Nav />
     </Root>
   );
