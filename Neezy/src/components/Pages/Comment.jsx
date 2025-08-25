@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import Header from "../Layout/Header";
 import Nav from "../Layout/Nav";
 import styled from "styled-components";
+import { useNavigate } from "react-router-dom";
 
 const Root = styled.div`
   width: 375px;
@@ -28,7 +29,7 @@ const Main = styled.main`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 60px; /* 네브바 높이만큼 패딩 추가 */
+  padding-bottom: 60px;
   text-align: center;
 `;
 
@@ -73,14 +74,33 @@ const Select = styled.select`
   box-sizing: border-box;
 `;
 
+// 뒤로가기 버튼 스타일
+const BackButton = styled.button`
+  position: absolute;
+  top: 60px;
+  left: 20px;
+  background: transparent;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  user-select: none;
+  color: #878786ed;
+
+  &:hover {
+    color: #3458d1;
+  }
+`;
+
 export default function Comment() {
   const [comments, setComments] = useState([]);
   const [title, setTitle] = useState("");
   const [contents, setContents] = useState("");
-  const [category, setCategory] = useState("BOWLING"); // 초기 값
+  const [category, setCategory] = useState("BOWLING");
   const [region, setRegion] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const navigate = useNavigate();
 
   const categoryOptions = [
     "BOWLING",
@@ -148,7 +168,6 @@ export default function Comment() {
       return;
     }
 
-    // 선택된 카테고리를 로컬스토리지에 저장
     localStorage.setItem("category", category);
 
     const postData = {
@@ -185,8 +204,16 @@ export default function Comment() {
     }
   };
 
+  // 뒤로가기 버튼 클릭시 이전페이지 이동
+  const goBack = () => {
+    navigate(-1);
+  };
+
   return (
     <Root>
+      <BackButton onClick={goBack} aria-label="뒤로가기">
+        ←
+      </BackButton>
       <Header />
       <Main>
         <h1>{region}</h1>
