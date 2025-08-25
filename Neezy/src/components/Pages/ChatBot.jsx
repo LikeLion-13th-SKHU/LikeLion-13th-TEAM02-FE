@@ -88,16 +88,28 @@ const ChatWindow = styled.div`
   flex: 1;
   padding: 10px;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
 `;
 
+
 const Message = styled.div`
-  text-align: ${(props) => (props.$sender === "user" ? "right" : "left")};
   margin: 5px 0;
-  display: block;
+  display: inline-block;
+  text-align: left;
   max-width: 70%;
   padding: 8px 12px;
   border-radius: 12px;
   border: 1px solid #f97316;
+  margin: 5px 0;
+  word-wrap: break-word;
+
+  background-color: ${(props) => 
+    props.$sender === "user" ? "#f97316" : "#f1f1f1"};
+    color: ${(props) => (props.$sender === "user" ? "white" : "block")};
+
+    align-self: ${(props) =>
+    props.$sender === "user" ? "flex-end" : "flex-start"};
 `;
 
 const InputArea =styled.div`
