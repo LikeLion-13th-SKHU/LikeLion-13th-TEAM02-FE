@@ -34,6 +34,7 @@ const Main = styled.main`
 
 const Section = styled.section`
   margin-top: ${({ mt }) => mt || "0"};
+  width: 90%;
 `;
 
 const CommentBox = styled.div`
@@ -60,25 +61,66 @@ const ContentTextarea = styled.textarea`
 
 const SubmitButton = styled.button`
   margin-top: 8px;
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
 `;
 
-export default function Comment({ region }) {
+const Select = styled.select`
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 8px;
+  box-sizing: border-box;
+`;
+
+export default function Comment() {
   const [comments, setComments] = useState([]);
   const [title, setTitle] = useState("");
   const [contents, setContents] = useState("");
-  const [category, setCategory] = useState("BOWLING"); // 필요시 선택 가능하게 확장 가능
+  const [category, setCategory] = useState("BOWLING"); // 초기 값
+  const [region, setRegion] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const categoryOptions = [
+    "BOWLING",
+    "ICECREAM",
+    "PASTA",
+    "CAFE",
+    "RESTAURANT",
+    "BOOKSTORE",
+    "GYM",
+    "MOVIE",
+    "HOTEL",
+    "PARK",
+  ];
+
+  useEffect(() => {
+    const storedRegion = localStorage.getItem("region");
+    if (storedRegion) {
+      setRegion(storedRegion);
+    }
+  }, []);
 
   useEffect(() => {
     if (!region) return;
     setLoading(true);
     setError(null);
-    fetch(`https://junyeong.store/api/posts/region/${region}`)
+
+    const accessToken = localStorage.getItem("accessToken");
+    if (!accessToken) {
+      setError("로그인이 필요합니다.");
+      setLoading(false);
+      return;
+    }
+
+    fetch(`https://junyeong.store/api/posts/region/${region}`, {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    })
       .then((res) => {
-        if (!res.ok) {
-          throw new Error("데이터를 불러오는 데 실패했습니다.");
-        }
+        if (!res.ok) throw new Error("데이터를 불러오는 데 실패했습니다.");
         return res.json();
       })
       .then((data) => {
@@ -99,10 +141,15 @@ export default function Comment({ region }) {
     }
 
     const memberId = localStorage.getItem("memberId");
-    if (!memberId) {
+    const accessToken = localStorage.getItem("accessToken");
+
+    if (!accessToken) {
       alert("로그인이 필요합니다.");
       return;
     }
+
+    // 선택된 카테고리를 로컬스토리지에 저장
+    localStorage.setItem("category", category);
 
     const postData = {
       title,
@@ -112,13 +159,17 @@ export default function Comment({ region }) {
     };
 
     try {
-      const response = await fetch(`/api/posts/${memberId}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(postData),
-      });
+      const response = await fetch(
+        `https://junyeong.store/api/posts/${memberId}`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify(postData),
+        }
+      );
 
       if (!response.ok) {
         throw new Error("코멘트 등록에 실패했습니다.");
@@ -160,9 +211,20 @@ export default function Comment({ region }) {
           )}
         </Section>
 
-        <Section width="90%" mt="24px">
+        <Section mt="24px">
           <h2>코멘트 작성하기</h2>
           <form onSubmit={handleSubmit}>
+            <Select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              aria-label="카테고리 선택"
+            >
+              {categoryOptions.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
+            </Select>
             <TitleInput
               type="text"
               value={title}
