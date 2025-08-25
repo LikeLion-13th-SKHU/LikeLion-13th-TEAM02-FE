@@ -29,7 +29,7 @@ const Main = styled.main`
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding-bottom: 60px;
+  padding-bottom: 160px; /* 코멘트 폼 높이+네브바 높이 만큼 여유 */
   text-align: center;
 `;
 
@@ -74,7 +74,6 @@ const Select = styled.select`
   box-sizing: border-box;
 `;
 
-// 뒤로가기 버튼 스타일
 const BackButton = styled.button`
   position: absolute;
   top: 60px;
@@ -84,10 +83,26 @@ const BackButton = styled.button`
   font-size: 24px;
   cursor: pointer;
   user-select: none;
-  color: #878786ed;
+  color: #3c67ff;
 
   &:hover {
     color: #3458d1;
+  }
+`;
+
+const CommentFormWrapper = styled.div`
+  position: fixed;
+  bottom: 60px; /* 네브바 높이만큼 띄워줌 */
+  left: 0;
+  right: 0;
+  width: 375px;
+  background: white;
+  padding: 16px;
+  box-shadow: 0 -2px 6px rgba(0, 0, 0, 0.1);
+  z-index: 1500;
+
+  @media (max-width: 400px) {
+    width: 320px;
   }
 `;
 
@@ -113,6 +128,7 @@ export default function Comment() {
     "MOVIE",
     "HOTEL",
     "PARK",
+    "PC",
   ];
 
   useEffect(() => {
@@ -124,6 +140,7 @@ export default function Comment() {
 
   useEffect(() => {
     if (!region) return;
+
     setLoading(true);
     setError(null);
 
@@ -144,7 +161,7 @@ export default function Comment() {
         return res.json();
       })
       .then((data) => {
-        const sorted = data.sort(
+        const sorted = data.posts.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
         setComments(sorted);
@@ -155,6 +172,7 @@ export default function Comment() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!title.trim() || !contents.trim()) {
       alert("제목과 내용을 모두 입력해주세요.");
       return;
@@ -194,9 +212,15 @@ export default function Comment() {
         throw new Error("코멘트 등록에 실패했습니다.");
       }
 
-      const newComment = await response.json();
+      const contentType = response.headers.get("content-type") || "";
+      if (contentType.includes("application/json")) {
+        const newComment = await response.json();
+        setComments((prev) => [newComment, ...prev]);
+      } else {
+        const text = await response.text();
+        alert(text);
+      }
 
-      setComments((prev) => [newComment, ...prev]);
       setTitle("");
       setContents("");
     } catch (err) {
@@ -204,7 +228,6 @@ export default function Comment() {
     }
   };
 
-  // 뒤로가기 버튼 클릭시 이전페이지 이동
   const goBack = () => {
     navigate(-1);
   };
@@ -226,7 +249,7 @@ export default function Comment() {
             <p>등록된 코멘트가 없습니다.</p>
           ) : (
             comments.map((comment) => (
-              <CommentBox key={comment.id}>
+              <CommentBox key={comment.postId}>
                 <h3>{comment.title}</h3>
                 <p>{comment.contents}</p>
                 <small>
@@ -237,8 +260,10 @@ export default function Comment() {
             ))
           )}
         </Section>
+      </Main>
 
-        <Section mt="24px">
+      <CommentFormWrapper>
+        <Section mt="0">
           <h2>코멘트 작성하기</h2>
           <form onSubmit={handleSubmit}>
             <Select
@@ -268,7 +293,8 @@ export default function Comment() {
             <SubmitButton type="submit">등록</SubmitButton>
           </form>
         </Section>
-      </Main>
+      </CommentFormWrapper>
+
       <Nav />
     </Root>
   );
