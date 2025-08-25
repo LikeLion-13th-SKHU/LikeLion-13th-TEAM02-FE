@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from "react";
-import proj4 from "proj4";
 import styled from "styled-components";
 import Header from "../Layout/Header";
 import Nav from "../Layout/Nav";
@@ -10,7 +9,7 @@ const Container = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
-  position: relative; /* 모달 절대 위치 기준 */
+  position: relative;
 `;
 
 const ContentArea = styled.div`
@@ -65,82 +64,89 @@ const Button = styled.button`
   padding: 10px 16px;
   border: none;
   border-radius: 6px;
-  background-color: #3c67ff;
   color: white;
   cursor: pointer;
   font-weight: 600;
   user-select: none;
   z-index: 1000;
+`;
+
+const AnalyzeButton = styled(Button)`
+  bottom: 20px;
+  left: 80px;
+  background-color: ${(props) => (props.disabled ? "#9e9e9e" : "#3c67ff")};
+  cursor: ${(props) => (props.disabled ? "default" : "pointer")};
+
+  &:hover {
+    background-color: ${(props) => (props.disabled ? "#9e9e9e" : "#3458d1")};
+  }
+`;
+
+const NeedButton = styled(Button)`
+  bottom: 20px;
+  right: 80px;
+  background-color: #3c67ff;
 
   &:hover {
     background-color: #3458d1;
   }
 `;
 
-const AnalyzeButton = styled(Button)`
-  bottom: 20px;
-  left: 80px;
-`;
+const BackToModalButton = styled(Button)`
+  bottom: 80px;
+  left: 20px;
+  padding: 10px 16px;
+  z-index: 1001;
+  background-color: #3c67ff;
 
-const NeedButton = styled(Button)`
-  bottom: 20px;
-  right: 80px;
+  &:hover {
+    background-color: #3458d1;
+  }
 `;
 
 export default function Main() {
   const mapRef = useRef(null);
   const placesRef = useRef(null);
   const [map, setMap] = useState(null);
-  const [keyword, setKeyword] = useState("");
+  const [region, setRegion] = useState("");
   const [showModal, setShowModal] = useState(false);
+  const [showMapOnly, setShowMapOnly] = useState(false);
+  const [categorizedPlaces, setCategorizedPlaces] = useState({});
+  const [markersByCategory, setMarkersByCategory] = useState({});
+  const [infoWindow, setInfoWindow] = useState(null);
+
   const navigate = useNavigate();
 
-  const [latitude, setLatitude] = useState(null);
-  const [longitude, setLongitude] = useState(null);
+  const defaultPosition = { lat: 37.5665, lng: 126.978 };
 
-  // 내 위치 받아오기
   useEffect(() => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLatitude(position.coords.latitude);
-          setLongitude(position.coords.longitude);
-        },
-        () => {
-          setLatitude(37.5665);
-          setLongitude(126.978);
-        }
-      );
-    } else {
-      setLatitude(37.5665);
-      setLongitude(126.978);
-    }
-  }, []);
-
-  // 카카오맵 생성 (최초 1회)
-  useEffect(() => {
-    if (
-      window.kakao &&
-      window.kakao.maps &&
-      mapRef.current &&
-      latitude &&
-      longitude &&
-      !map
-    ) {
+    if (window.kakao && mapRef.current && !map) {
       const createdMap = new window.kakao.maps.Map(mapRef.current, {
-        center: new window.kakao.maps.LatLng(latitude, longitude),
+        center: new window.kakao.maps.LatLng(
+          defaultPosition.lat,
+          defaultPosition.lng
+        ),
         level: 4,
       });
-      createdMap.setDraggable(true);
-      createdMap.setZoomable(true);
       setMap(createdMap);
       placesRef.current = new window.kakao.maps.services.Places();
-    }
-  }, [latitude, longitude, map]);
 
-  // 검색 → 행정동 폴리곤 표시
+      const iw = new window.kakao.maps.InfoWindow({ zIndex: 1 });
+      setInfoWindow(iw);
+    }
+  }, [mapRef, map]);
+
+  // 모든 마커 제거
+  const removeMarkers = () => {
+    Object.values(markersByCategory).forEach((markerArray) => {
+      markerArray.forEach((marker) => marker.setMap(null));
+    });
+    setMarkersByCategory({});
+    if (infoWindow) infoWindow.close();
+  };
+
   const searchPlaces = () => {
-    if (!keyword.trim()) {
+    if (!region.trim()) {
       alert("검색어를 입력하세요!");
       return;
     }
@@ -148,80 +154,80 @@ export default function Main() {
       alert("지도가 준비되지 않았습니다.");
       return;
     }
+    localStorage.setItem("region", region);
+    removeMarkers();
 
-    placesRef.current.keywordSearch(keyword, async (data, status) => {
+    placesRef.current.keywordSearch(region, (data, status) => {
       if (status === window.kakao.maps.services.Status.OK && data.length > 0) {
-        const place = data[0];
-        const coords = new window.kakao.maps.LatLng(place.y, place.x);
-        map.setCenter(coords);
-        new window.kakao.maps.Marker({
-          map: map,
-          position: coords,
-        });
+        const bounds = new window.kakao.maps.LatLngBounds();
+        const categoryMap = {};
+        const markerMap = {};
 
-        try {
-          const query = encodeURIComponent(keyword);
-          const serviceKey =
-            "%2F%2FMfJqQQaQ41AVYKyHWY1OAN7QGjkZHHl03DCC7%2FJOX%2B%2FRNPchYl%2BjaqcqNF36u2LWTlqK0yHsLYHFDAhOd0TA%3D%3D";
+        data.forEach((place) => {
+          const category = place.category_group_name || "기타";
 
-          const url = `https://api.odcloud.kr/api/15063424/v1/uddi:257e1510-0eeb-44de-8883-8295c94dadf7?읍면동명=${query}&serviceKey=${serviceKey}`;
+          if (!categoryMap[category]) categoryMap[category] = [];
+          categoryMap[category].push(place);
 
-          const response = await fetch(url);
-          const json = await response.json();
+          const position = new window.kakao.maps.LatLng(place.y, place.x);
+          const marker = new window.kakao.maps.Marker({ position, map });
 
-          if (!json.data || json.data.length === 0) {
-            alert("공공데이터에서 일치하는 법정동코드를 찾지 못했습니다.");
-            return;
-          }
-
-          const rawEmdCd = json.data[0].법정동코드.toString();
-          const emdCdTrimmed =
-            rawEmdCd.length === 10 ? rawEmdCd.slice(0, 8) : rawEmdCd;
-
-          const geoResponse = await fetch("/222.json");
-          const geoJson = await geoResponse.json();
-
-          const fullEmdCd = emdCdTrimmed + "00";
-
-          const feature = geoJson.features.find(
-            (f) => f.properties.EMD_CD === fullEmdCd
-          );
-
-          if (!feature) {
-            console.log("geoJSON EMD_CD 목록:", emdCdTrimmed);
-
-            alert("geoJSON 데이터에서 일치하는 폴리곤을 찾지 못했습니다.");
-            return;
-          }
-
-          const coordinates = feature.geometry.coordinates;
-          const polygonPath = [];
-          const utmk =
-            "+proj=tmerc +lat_0=38 +lon_0=127.5 +k=0.9996 +x_0=1000000 +y_0=2000000 +ellps=GRS80 +units=m +no_defs";
-          const wgs84 = "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs";
-          const transformer = proj4(utmk, wgs84);
-
-          coordinates.forEach((coordinateArray) => {
-            coordinateArray.forEach((coord) => {
-              const [longi, lati] = transformer.forward(coord);
-              polygonPath.push(new window.kakao.maps.LatLng(lati, longi));
-            });
+          window.kakao.maps.event.addListener(marker, "click", () => {
+            const content = `<div style="padding:5px;font-size:12px;">${place.place_name}</div>`;
+            infoWindow.setContent(content);
+            infoWindow.open(map, marker);
           });
 
-          new window.kakao.maps.Polygon({
-            path: polygonPath,
-            strokeColor: "#925CE9",
-            fillColor: "#925CE9",
-            fillOpacity: 0.7,
-          }).setMap(map);
-        } catch (error) {
-          console.error("법정동코드 조회 또는 폴리곤 그리기 실패:", error);
-          alert("분석 중 오류가 발생했습니다.");
-        }
+          if (!markerMap[category]) markerMap[category] = [];
+          markerMap[category].push(marker);
+
+          bounds.extend(position);
+        });
+
+        setCategorizedPlaces(categoryMap);
+        setMarkersByCategory(markerMap);
+        map.setBounds(bounds);
+
+        // 마커가 활성화되었으므로 분석하기 버튼 활성화
+        setAnalyzeEnabled(true);
       } else {
         alert("검색 결과가 없습니다.");
+        setCategorizedPlaces({});
+        removeMarkers();
+
+        // 마커가 없으므로 분석하기 버튼 비활성화
+        setAnalyzeEnabled(false);
       }
     });
+  };
+
+  // 분석하기 버튼 활성화 상태 관리
+  const [analyzeEnabled, setAnalyzeEnabled] = useState(false);
+
+  // 카테고리 클릭 시 모달 닫고 지도 뷰만 노출
+  const handleCategoryClick = (category) => {
+    setShowModal(false);
+    setShowMapOnly(true);
+
+    Object.values(markersByCategory).forEach((markerArray) =>
+      markerArray.forEach((marker) => marker.setMap(null))
+    );
+
+    if (markersByCategory[category]) {
+      markersByCategory[category].forEach((marker) => marker.setMap(map));
+    }
+
+    if (infoWindow) infoWindow.close();
+  };
+
+  // 지도에 있는 '모달로 돌아가기' 버튼 클릭시 모달 재오픈
+  const backToModal = () => {
+    setShowMapOnly(false);
+    setShowModal(true);
+
+    Object.values(markersByCategory).forEach((markerArray) =>
+      markerArray.forEach((marker) => marker.setMap(map))
+    );
   };
 
   return (
@@ -229,28 +235,49 @@ export default function Main() {
       <Header />
       <ContentArea>
         <MapWrapper ref={mapRef} />
-        <SearchBox>
-          <Input
-            type="text"
-            placeholder="장소를 입력하세요"
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            onKeyPress={(e) => {
-              if (e.key === "Enter") searchPlaces();
-            }}
-          />
-          <SearchButton onClick={searchPlaces}>검색</SearchButton>
-        </SearchBox>
-        <AnalyzeButton onClick={() => setShowModal(true)}>
-          분석하기
-        </AnalyzeButton>
-        <NeedButton onClick={() => navigate("/chatbot")}>필요해요</NeedButton>
+        {!showMapOnly && (
+          <>
+            <SearchBox>
+              <Input
+                type="text"
+                placeholder="장소를 입력하세요"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === "Enter") searchPlaces();
+                }}
+              />
+              <SearchButton onClick={searchPlaces}>검색</SearchButton>
+            </SearchBox>
+            <AnalyzeButton
+              disabled={!analyzeEnabled}
+              onClick={() => analyzeEnabled && setShowModal(true)}
+            >
+              분석하기
+            </AnalyzeButton>
+            <NeedButton onClick={() => navigate("/chatbot")}>
+              필요해요
+            </NeedButton>
+          </>
+        )}
+
+        {showMapOnly && (
+          <BackToModalButton onClick={backToModal}>
+            모달로 돌아가기
+          </BackToModalButton>
+        )}
       </ContentArea>
+
       <Nav />
-      {showModal && ( <BottomSheet onClose={() => setShowModal(false)}
-      keyword={keyword} 
-      />
-          )}
+
+      {showModal && (
+        <BottomSheet
+          onClose={() => setShowModal(false)}
+          region={region}
+          categorizedPlaces={categorizedPlaces}
+          onCategoryClick={handleCategoryClick}
+        />
+      )}
     </Container>
   );
 }

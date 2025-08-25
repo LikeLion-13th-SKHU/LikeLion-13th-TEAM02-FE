@@ -1,9 +1,7 @@
-// BottomSheet.jsx
-import React, { useState } from "react";
+import React from "react";
 import styled, { keyframes } from "styled-components";
-import { useNavigate } from "react-router-dom";
 import Nav from "../Layout/Nav";
-
+import { useNavigate } from "react-router-dom";
 
 const OverlayFadeIn = keyframes`
   from { opacity: 0; }
@@ -19,13 +17,13 @@ const Overlay = styled.div`
   position: absolute;
   top: 0;
   left: 0;
-  width: 100%; /* 부모 너비 전체 */
-  height: 100%; /* 부모 높이 전체 */
+  width: 100%;
+  height: 100%;
   background-color: rgba(0, 0, 0, 0.5);
   animation: ${OverlayFadeIn} 0.3s ease forwards;
   display: flex;
   justify-content: center;
-  align-items: flex-end; /* 하단에서 시트 올라오게 */
+  align-items: flex-end;
   z-index: 2000;
   border-radius: inherit;
 `;
@@ -34,7 +32,7 @@ const Sheet = styled.div`
   position: relative;
   width: 100%;
   max-width: 375px;
-  height: calc(90% - 60px); /* Nav 높이(60px) 고려 */
+  height: calc(90% - 60px);
   background-color: white;
   border-radius: 20px 20px 0 0;
   animation: ${SheetSlideUp} 0.3s ease forwards;
@@ -54,113 +52,124 @@ const CloseButton = styled.button`
   cursor: pointer;
 `;
 
+const Title = styled.h2`
+  text-align: center;
+  font-size: 22px;
+  font-weight: 700;
+  margin-bottom: 10px;
+`;
+
+const Divider = styled.div`
+  width: 100%;
+  height: 2px;
+  background-color: #ddd;
+  margin-bottom: 20px;
+`;
+
 const Logo = styled.img`
   width: 120px;
   margin-bottom: 10px;
 `;
 
-const Stats = styled.div`
+const CategoryList = styled.div`
   display: flex;
-  justify-content: space-around;
+  flex-direction: column;
+  gap: 12px;
+  max-height: 300px;
+  overflow-y: auto;
   margin-bottom: 20px;
-  font-weight: 700;
 `;
 
-const StatBox = styled.div`
-  text-align: center;
-`;
-
-const CommentButton = styled.div`
-  width: 100%;
-  padding: 10px;
+const CategoryItem = styled.div`
+  padding: 12px 16px;
+  border-radius: 8px;
   background-color: #3c67ff;
   color: white;
-  border: none;
-  border-radius: 8px;
   font-weight: 600;
-  margin-bottom: 40px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.2s ease;
+
+  &:hover {
+    background-color: #3458d1;
+  }
 `;
 
 const AISolution = styled.div`
   padding: 15px;
-  border: 3px solid #FFB516;
+  border: 3px solid #ffb516;
   border-radius: 8px;
 `;
 
-const img = styled.img`
-  width: 10px;
-  display: block;
-  margin: 0 auto 20px auto;
+const FixedWrapper = styled.div`
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
 `;
 
+const ViewCommentsButton = styled.button`
+  background-color: #ffb516;
+  color: white;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  font-size: 18px;
+  width: 80%;
+  padding: 10px 0;
+  margin: 0 auto 20px auto;
+  display: block;
+  cursor: pointer;
 
-// BottomSheet 내부에서 모달 작업 상태를 관리하고 컨텐츠도 동적으로 작성 가능
-export default function BottomSheet({ onClose, keyword }) {
-  // 내부 상태 예시: 분석 결과 텍스트
+  &:hover {
+    background-color: #e0a511;
+  }
+`;
 
+export default function BottomSheet({
+  onClose,
+  region,
+  categorizedPlaces,
+  onCategoryClick,
+}) {
   const navigate = useNavigate();
 
-  const gotoComment = () => {
-    navigate("/comment")
+  // 클릭 시 부모 콜백 실행 (지도에 마커 강조)
+  const handleCategoryClick = (category) => {
+    if (onCategoryClick) {
+      onCategoryClick(category);
+    }
   };
 
-  const CommentButton = styled.button`
-    width: 80%;
-    padding:  6px 0;
-    background-color: #FFB516;
-    color: white;
-    border: none;
-    border-radius: 16px;
-    font-weight: 600;
-    font-size: 18px;
-    margin: 0 auto 20px auto;
-    display: block;
-    text-align: center;
-  `;
-
-  const Title = styled.h2`
-    text-align: center;
-    font-size: 22px;
-    font-weight: 700;
-    margin-bottom: 10px
-  `;
-
-  const Divider = styled.div`
-    width: 100%;
-    height: 2px;
-    background-color: #ddd;
-    margin-bottom: 20px;
-  `;
-
-  const FixedWrapper = styled.div`
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-  `;
+  // 코멘트 보기 페이지로 이동
+  const goToComments = () => {
+    navigate("/comment"); // 경로는 필요에 따라 조정하세요
+  };
 
   return (
     <Overlay onClick={onClose}>
       <Sheet onClick={(e) => e.stopPropagation()}>
         <CloseButton onClick={onClose}>✕</CloseButton>
-        <Title>{keyword ? `${keyword} 상권 정보` : "분석 결과"}</Title>
+        <Title>{region ? `${region} 상권 정보` : "분석 결과"}</Title>
         <Divider />
         <Logo src="/img/Neezy 로고.png" alt="Neezy 로고" />
-        <Stats>
-          <StatBox>
-            <div>음식점<br /> 4개</div>
-          </StatBox>
-          <StatBox>
-            <div>편의점<br /> 5개</div>
-          </StatBox>
-          <StatBox>
-            <div>카페<br /> 3개</div>
-          </StatBox>
-          <StatBox>
-            <div>병원<br /> 2개</div>
-          </StatBox>
-        </Stats>
-        <CommentButton onClick={gotoComment}>코멘트</CommentButton>
+
+        <CategoryList>
+          {Object.keys(categorizedPlaces).map((category) => (
+            <CategoryItem
+              key={category}
+              onClick={() => handleCategoryClick(category)}
+              title={`${category} (${categorizedPlaces[category].length}개)`}
+            >
+              {category} ({categorizedPlaces[category].length}개)
+            </CategoryItem>
+          ))}
+        </CategoryList>
+
+        <ViewCommentsButton onClick={goToComments}>
+          코멘트 보기
+        </ViewCommentsButton>
+
         <AISolution>
           <h3>ai와 함께하는 종합 솔루션 서비스</h3>
         </AISolution>
